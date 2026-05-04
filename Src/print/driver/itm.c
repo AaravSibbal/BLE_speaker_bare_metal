@@ -1,6 +1,6 @@
 #include "itm.h"
 #include "dbgmcu.h"
-#include "../../gpio.h"
+#include "../../peripherals/drivers/gpio.h"
 #include "demcr.h"
 #include "tpiu.h"
 

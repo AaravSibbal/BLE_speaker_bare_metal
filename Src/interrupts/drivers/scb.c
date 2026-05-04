@@ -326,6 +326,7 @@ uint32_t SCB_get_pending_IRQ(SCB_t * const self, IRQn_t IRQn){
         default:
             printf("SCB: couldn't get the pending bit, IRQn not supported: %d\n", IRQn);
     }
+    return 0;
 }
 
 uint32_t SCB_get_active(SCB_t * const self, IRQn_t IRQn){
@@ -333,21 +334,22 @@ uint32_t SCB_get_active(SCB_t * const self, IRQn_t IRQn){
         printf("SCB: IRQn greater than 0, check failed, IRQn: %d\n", IRQn);
         return 0;
     }
+    uint32_t is_active = 0;
     switch(IRQn){
         case SysTick_IRQn:
-            uint32_t is_active = SHCSR_SYSTICK_IS_ACTIVE_MSK;
+            is_active = ((uint32_t) SHCSR_SYSTICK_IS_ACTIVE_MSK(self));
             return is_active;
             break;
         case UsageFault_IRQn:
-            uint32_t is_active = SHCSR_USGFAULT_IS_ACTIVE_MSK;
+            is_active = SHCSR_USGFAULT_IS_ACTIVE_MSK(self);
             return is_active;
             break;
         case BusFault_IRQn:
-            uint32_t is_active = SHCSR_BUSFAULT_IS_ACTIVE_MSK;
+            is_active = SHCSR_BUSFAULT_IS_ACTIVE_MSK(self);
             return is_active;
             break;
         case MemoryManagement_IRQn:
-            uint32_t is_active = SHCSR_MEMFAULT_IS_ACTIVE_MSK;
+            is_active = SHCSR_MEMFAULT_IS_ACTIVE_MSK(self);
             return is_active;
             break;
         default:

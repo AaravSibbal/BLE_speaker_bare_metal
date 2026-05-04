@@ -35,9 +35,9 @@ and that makes sense to me.
 
 
 #include "Src/print/driver/itm.h"
-#include "interrupts/scb.h"
+#include "interrupts/drivers/scb.h"
 #include "rcc.h"
-#include "interrupts/syscfg.h"
+#include "peripherals/drivers/syscfg.h"
 #include "print/printf.h"
 
 #define USER_BTN_PIN ((uint8_t) 0)

@@ -2,7 +2,7 @@
 #define ITM_H
 
 #include "../../def.h"
-#include "../../gpio.h"
+#include "../../peripherals/drivers/gpio.h"
 #include "dbgmcu.h"
 #include "demcr.h"
 #include "tpiu.h"

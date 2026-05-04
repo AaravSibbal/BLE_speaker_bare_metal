@@ -43,16 +43,16 @@ set(cpu_PARAMS
 # Sources
 set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/main.c
-	${CMAKE_CURRENT_SOURCE_DIR}/Src/gpio.c   
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/drivers/gpio.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/print/driver/dbgmcu.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/print/driver/itm.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/print/driver/tpiu.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/print/driver/demcr.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/print/printf.c
-	${CMAKE_CURRENT_SOURCE_DIR}/Src/interrupts/exti.c
-	${CMAKE_CURRENT_SOURCE_DIR}/Src/interrupts/nvic.c
-	${CMAKE_CURRENT_SOURCE_DIR}/Src/interrupts/scb.c
-	${CMAKE_CURRENT_SOURCE_DIR}/Src/interrupts/syscfg.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/drivers/exti.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/interrupts/drivers/nvic.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/interrupts/drivers/scb.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/drivers/syscfg.c
 )
 
 # Include directories for all compilers
@@ -153,7 +153,7 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     ${cpu_PARAMS}
     ${linker_OPTS}
     -Wl,-Map=${CMAKE_PROJECT_NAME}.map
-    -u _printf_float # STDIO float formatting support (remove if not used)
+    # -u _printf_float # STDIO float formatting support (remove if not used)
     --specs=nosys.specs
     -Wl,--start-group
     -lc
