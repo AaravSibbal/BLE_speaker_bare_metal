@@ -2,8 +2,7 @@
 #define SCB_H
 
 #include "../../def.h"
-#include "../../print/printf.h"
-#include "irq.h"
+#include "../../services/print/printf.h"
 
 #define SCB_BASE (0xE000ED00)
 #define SCB_AIRCR_KEY ((uint32_t) 0x5FA)

@@ -1,9 +1,9 @@
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
-#include "drivers/irq.h"
-#include "drivers/nvic.h"
-#include "drivers/scb.h"
+#include "../../def.h"
+#include "../../peripherals/nvic/nvic.h"
+#include "../../peripherals/scb/scb.h"
 
 
 void enable_IRQ(IRQn_t IRQn);

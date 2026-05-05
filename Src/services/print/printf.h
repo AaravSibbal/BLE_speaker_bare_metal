@@ -34,7 +34,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
-#include "driver/itm.h"
+#include "../../peripherals/itm/itm.h"
 
 
 #ifdef __cplusplus

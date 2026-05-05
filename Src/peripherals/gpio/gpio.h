@@ -2,7 +2,6 @@
 #define GPIO_H
 
 
-#include <stdint.h>
 #include "../../def.h"
 
 #define GPIOB_BASE  ((uint32_t)0x40020400)
