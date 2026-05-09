@@ -8,6 +8,7 @@
 #define TRUE 1
 #define FALSE 0
 #define NULL ((void*)0)
+#define MSK_OF_ONES(num) ((uint32_t)((1UL << (num)) - 1))
 
 /**
 added from stm32407.h 

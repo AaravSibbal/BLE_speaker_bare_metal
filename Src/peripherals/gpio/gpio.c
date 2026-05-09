@@ -1,8 +1,10 @@
 #include "gpio.h"
 #include "assert.h"
+#include <cstddef>
 
 #define GPIO_BASE_ADDRESS (0x40020000)
 #define GPIO_OFFSET (0x400)
+#define MODER_CLR_MSK(pin) (~(MSK_OF_ONES(2) << (2*(pin))))
 
 typedef struct GPIO_driver{
     __IO uint32_t MODER;
@@ -21,47 +23,65 @@ struct GPIO{
     GPIO_Pin_t pin;
 };
 
-void GPIO_set_moder(GPIO_t* self, GPIO_MODER_t mode){
+static inline void GPIO_assert_self_and_driver(GPIO_t* self){
     assert(self != NULL);
-    self->driver->MODER &= ~(3UL << (2*self->pin));
-    self->driver->MODER |= ((uint32_t)mode <<(2*self->pin));
+    assert(self->driver != NULL);
 }
 
-void GPIO_set_otyper(GPIO_t* self, GPIO_OTYPER_t type){
-    self->driver->OTYPER &= ~(1<<self->pin);
-    self->driver->OTYPER |= (type<<self->pin);
+static inline uint32_t GPIO_get_moder_set_msk(const GPIO_MODER_t mode, const GPIO_Pin_t pin){
+    return ((uint32_t)mode << (2*pin));
 }
 
-void GPIO_set_odr(GPIO_t* self, GPIO_ODR_t output){
-    self->driver->ODR &= ~(1<<self->pin);
-    self->driver->ODR |= (output<<self->pin);
+static inline uint32_t GPIO_get_moder_msk(const GPIO_Pin_t pin){
+    return (uint32_t)(~(MSK_OF_ONES(2) << (2*pin)));
 }
 
-void GPIO_set_alt_func(GPIO_t* self, GPIO_AFx_t function){
+void GPIO_set_moder(GPIO_t* self, const GPIO_MODER_t mode){
+    GPIO_assert_self_and_driver(self);
+    self->driver->MODER &= ~(GPIO_get_moder_msk(self->pin));
+    self->driver->MODER |= GPIO_get_moder_set_msk(mode, self->pin);
+}
+
+static inline uint32_t GPIO_get_otyper_msk(GPIO_Pin_t pin){
+    return ((uint32_t)())
+}
+
+void GPIO_set_otyper(GPIO_t* self, const GPIO_OTYPER_t type){
+    GPIO_assert_self_and_driver(self);
+    self->driver->OTYPER &= ~(1UL<<self->pin);
+    self->driver->OTYPER |= ((uint32_t)type<<self->pin);
+}
+
+void GPIO_set_odr(GPIO_t* self, const GPIO_ODR_t output){
+    self->driver->ODR &= ~(1UL<<self->pin);
+    self->driver->ODR |= ((uint32_t)output<<self->pin);
+}
+
+void GPIO_set_alt_func(GPIO_t* self, const GPIO_AFx_t function){
     if(self->pin <= 7){
-        self->driver->AFR[0] &= ~(15<<(self->pin*4));
-        self->driver->AFR[0] |= (function<<(self->pin*4));
+        self->driver->AFR[0] &= ~(15UL<<(self->pin*4));
+        self->driver->AFR[0] |= ((uint32_t)function<<(self->pin*4));
         return;
     }
     uint32_t temp_pin = self->pin - 8;
-    self->driver->AFR[1] &= ~(15<<(temp_pin*4));
+    self->driver->AFR[1] &= ~(15UL<<(temp_pin*4));
     self->driver->AFR[1] |= (function<<(temp_pin*4));
 }
 
-void GPIO_set_bssr(GPIO_t* self, BSSR_value_t val){
+void GPIO_set_bssr(GPIO_t* self, const BSSR_value_t val){
     if(val == BSSR_SET){
-        self->driver->BSSR |= (1<<self->pin);
+        self->driver->BSSR = (1UL<<self->pin);
         return;
     }
-    self->driver->BSSR |= (1<<(self->pin+16));
+    self->driver->BSSR = (1UL<<(self->pin+16));
 }
 
-void GPIO_set_pupdr(GPIO_t *self, PUPDR_t val){
-    self->driver->PUPDR &= ~(3<<(self->pin*2));
-    self->driver->PUPDR |= (val<<(self->pin*2));
+void GPIO_set_pupdr(GPIO_t *self, const PUPDR_t val){
+    self->driver->PUPDR &= ~(3UL<<(self->pin*2));
+    self->driver->PUPDR |= ((uint32_t)val<<(self->pin*2));
 }
 
-GPIO_t* GPIO_init(GPIO_t* self, GPIO_port_t port, GPIO_Pin_t pin){
+GPIO_t* GPIO_init(GPIO_t* self, const GPIO_port_t port, const GPIO_Pin_t pin){
     self->driver = ((GPIO_driver_t*)(GPIO_BASE_ADDRESS + (port * GPIO_OFFSET)));
     self->pin = pin;
     return self;

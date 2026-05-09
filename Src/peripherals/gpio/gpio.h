@@ -89,13 +89,13 @@ typedef enum GPIO_port{
 }GPIO_port_t;
 
 
-GPIO_t* GPIO_init(GPIO_t* self, GPIO_port_t port, GPIO_Pin_t pin);
-void GPIO_set_moder(GPIO_t* self, GPIO_MODER_t mode);
-void GPIO_set_otyper(GPIO_t* self, GPIO_OTYPER_t type);
-void GPIO_set_odr(GPIO_t* self, GPIO_ODR_t output);
-void GPIO_set_alt_func(GPIO_t* self, GPIO_AFx_t function);
-void GPIO_set_bssr(GPIO_t* self, BSSR_value_t);
-void GPIO_set_pupdr(GPIO_t *self, PUPDR_t val);
+GPIO_t* GPIO_init(GPIO_t* self, const GPIO_port_t port, const GPIO_Pin_t pin);
+void GPIO_set_moder(GPIO_t* self, const GPIO_MODER_t mode);
+void GPIO_set_otyper(GPIO_t* self, const GPIO_OTYPER_t type);
+void GPIO_set_odr(GPIO_t* self, const GPIO_ODR_t output);
+void GPIO_set_alt_func(GPIO_t* self, const GPIO_AFx_t function);
+void GPIO_set_bssr(GPIO_t* self, const BSSR_value_t val);
+void GPIO_set_pupdr(GPIO_t *self, const PUPDR_t val);
 
 
 #endif

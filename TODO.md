@@ -13,3 +13,7 @@
 6. set up button service
 
 7. convert all enums that are used in bit operations to uint32_t. 
+
+8. create masks for gpio bitshifts (current)
+
+9. create critical sections for __IO variables when doing read/modify/write
