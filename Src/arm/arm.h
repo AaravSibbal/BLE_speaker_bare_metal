@@ -23,32 +23,32 @@ __attribute__( ( always_inline ) ) static inline uint32_t __get_PRIMASK(void)
 
 __attribute__( ( always_inline ) ) static inline void __set_PRIMASK(uint32_t priMask)
 {
-  __ASM volatile ("MSR primask, %0" : : "r" (priMask) : "memory");
+  __asm volatile ("MSR primask, %0" : : "r" (priMask) : "memory");
 }
 
 __attribute__((always_inline)) static inline void __WFI(void)
 {
-  __ASM volatile ("wfi");
+  __asm volatile ("wfi");
 }
 
 __attribute__((always_inline)) static inline void __WFE(void)
 {
-  __ASM volatile ("wfe");
+  __asm volatile ("wfe");
 }
 
 __attribute__((always_inline)) static inline void __ISB(void)
 {
-  __ASM volatile ("isb 0xF":::"memory");
+  __asm volatile ("isb 0xF":::"memory");
 }
 
 __attribute__((always_inline)) static inline void __DSB(void)
 {
-  __ASM volatile ("dsb 0xF":::"memory");
+  __asm volatile ("dsb 0xF":::"memory");
 }
 
 __attribute__((always_inline)) static inline void __DMB(void)
 {
-  __ASM volatile ("dmb 0xF":::"memory");
+  __asm volatile ("dmb 0xF":::"memory");
 }
 
 #endif
