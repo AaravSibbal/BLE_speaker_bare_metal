@@ -8,8 +8,14 @@
 #define TRUE 1
 #define FALSE 0
 #define NULL ((void*)0)
-#define MSK_OF_ONES(num) ((uint32_t)((1UL << (num)) - 1))
 #define __STATIC_INLINE __attribute__((always_inline)) static inline
+#define __INLINE 
+#define __INLINE __attribute__((always_inline)) inline
+
+
+__INLINE uint32_t msk_of_ones(uint32_t num){
+  return ((uint32_t)((1UL << (num)) - 1));
+}
 
 /**
 added from stm32407.h 
