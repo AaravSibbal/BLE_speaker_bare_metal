@@ -3,7 +3,7 @@
 
 #include "def.h"
 
-typdef struct RCC RCC_t;
+typedef struct RCC RCC_t;
 
 
 

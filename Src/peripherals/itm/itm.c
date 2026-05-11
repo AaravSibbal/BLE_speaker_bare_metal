@@ -47,7 +47,7 @@ static void ITM_unlock_port(ITM_t* self, uint8_t port){
 
 ITM_t* ITM_init(ITM_t* self, GPIO_t* gpio){
     self->driver = ITM_ENGINE;
-    self->gpio = GPIO_init(gpio, GPIO_PORT_B, GPIO_PIN_3);
+    self->gpio = GPIO_init(GPIO_PORT_B, GPIO_PIN_3);
     ITM_gpio_setup(self);
     DEMCR_enable_trace();
     DBGMCU_debug_enable(DBGMCU_ASYNC);

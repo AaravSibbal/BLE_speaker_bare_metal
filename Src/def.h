@@ -9,13 +9,60 @@
 #define __STATIC_INLINE __attribute__((always_inline)) static inline
 #define __INLINE __attribute__((always_inline)) inline
 
+#define SRAM_BIT_BAND_START 0x20000000UL
+#define SRAM_BIT_BAND_END 0x200FFFFFUL
+#define SRAM_BIT_BAND_BASE 0x22000000UL
+
+#define PERIPHERAL_BIT_BAND_START 0x40000000UL 
+#define PERIPHERAL_BIT_BAND_END 0x400FFFFFUL 
+#define PERIPHERAL_BIT_BAND_BASE 0x42000000UL
+
+
+/**
+* @brief Returns the bit band alias address got the given address
+* @param address The address of the register you are acting on
+* @param bit the exact bit that needs to set/reset
+* @return bit banding alias address or 0 if there is an error
+* the bit that needs to be changed
+* @note PM0214-rev6
+* link: https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://www.st.com/resource/en/programming_manual/pm0214-stm32-cortexm4-mcus-and-mpus-programming-manual-stmicroelectronics.pdf&ved=2ahUKEwiDkb6h0bGUAxVBNoYAHcUqLQcQFnoECA0QAQ&usg=AOvVaw0Wm2Kvb6UMOUO7rWx3Zup9
+* section 2.2.5
+* bit banding 
+ */ 
+__INLINE uint32_t bit_band_get_addr(const uint32_t address, const uint32_t bit){
+	uint32_t base_alias_addr;
+	uint32_t offset;
+	uint32_t bit_band_addr;
+	if((address >= SRAM_BIT_BAND_START) && (address < SRAM_BIT_BAND_END)){
+		base_alias_addr = SRAM_BIT_BAND_BASE;
+		offset = address - SRAM_BIT_BAND_START;
+	}
+	else if((address >= PERIPHERAL_BIT_BAND_START) && (address < PERIPHERAL_BIT_BAND_END)){
+		base_alias_addr = PERIPHERAL_BIT_BAND_BASE;
+		offset = address - PERIPHERAL_BIT_BAND_START;
+	}
+	else{
+		return 0;
+	}
+	bit_band_addr = base_alias_addr + (offset*32) + (bit*4);
+	return bit_band_addr;
+}
+
+__INLINE void bit_band_write(const uint32_t addr, const uint32_t bit, uint32_t val){
+	uint32_t alias_addr = bit_band_get_addr(addr, bit);
+	assert(alias_addr != 0);
+	assert(val == 0 || val == 1);
+	(*(volatile uint32_t *)alias_addr) = val;
+}
+
 typedef enum {
-  FALSE = 0, 
-  TRUE
+	FALSE = 0, 
+	TRUE
 } __bool;
 
+/// 
 __INLINE uint32_t msk_of_ones(uint32_t num){
-  return ((uint32_t)((1UL << (num)) - 1));
+	return ((uint32_t)((1UL << (num)) - 1));
 }
 
 /**
