@@ -12,9 +12,9 @@ typedef struct RCC{
     __IO uint32_t APB1RSTR;
     __IO uint32_t APB2RSTR;
     uint32_t RESERVED_1[2];
-    __IO uin32_t AHB1ENR;
-    __IO uin32_t AHB2ENR;
-    __IO uin32_t AHB3ENR;
+    __IO uint32_t AHB1ENR;
+    __IO uint32_t AHB2ENR;
+    __IO uint32_t AHB3ENR;
     uint32_t RESERVED_2;
     __IO uint32_t APB1ENR;
     __IO uint32_t APB2ENR;
@@ -44,20 +44,24 @@ RCC_t* init_RCC(void){
 
 void RCC_en_GPIO(RCC_t* self, GPIO_port_t port){
     uint32_t port_uint = ((uint32_t)port);
-    bit_band_write(&self->AHB1ENR, port_uint, ENABLE);
+    uint32_t addr = (uint32_t)(&self->AHB1ENR);
+    bit_band_write(addr, port_uint, ENABLE);
 }
 
 void RCC_dis_GPIO(RCC_t* self, GPIO_port_t port){
     uint32_t port_uint = ((uint32_t)port);
-    bit_band_write(&self->AHB1ENR, port_uint, DISABLE);
+    uint32_t addr = (uint32_t)(&self->AHB1ENR);
+    bit_band_write(addr, port_uint, DISABLE);
 }
 
 #define SYSCFG_BIT 14UL
 
 void RCC_en_SYSCFG(RCC_t* self){
-    bit_band_write(&self->APB2ENR, SYSCFG_BIT, ENABLE);
+    uint32_t addr = (uint32_t)(&self->APB2ENR);
+    bit_band_write(addr, SYSCFG_BIT, ENABLE);
 }
 
 void RCC_dis_SYSCFG(RCC_t* self){
-    bit_band_write(&self->APB2ENR, SYSCFG_BIT, DISABLE);
+    uint32_t addr = (uint32_t)(&self->APB2ENR);
+    bit_band_write(addr, SYSCFG_BIT, DISABLE);
 }

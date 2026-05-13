@@ -6,14 +6,17 @@
 
 typedef struct LED LED_t;
 
-typdef enum LED_color{
-    GREEN = 12,
-    ORANGE,
-    RED,
-    BLUE
+typedef enum LED_color{
+    LED_GREEN = 12,
+    LED_ORANGE,
+    LED_RED,
+    LED_BLUE
 }LED_color_t;
 
-LED_t* LED_init(LED_t* self, LED_color_t color);
-void toggle_LED(LED_t* self);
+#define LED_GPIO_PORT GPIO_PORT_D
+
+LED_t* LED_init(LED_color_t color, GPIO_t* gpio, RCC_t* rcc);
+void LED_toggle(LED_t* self);
+GPIO_Pin_t LED_get_pin(LED_color_t color);
 
 #endif

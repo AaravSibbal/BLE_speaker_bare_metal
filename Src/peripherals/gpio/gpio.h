@@ -73,6 +73,7 @@ typedef enum PUPDR_val{
 
 
 GPIO_t* GPIO_init(const GPIO_port_t port, const GPIO_Pin_t pin, RCC_t* rcc_obj);
+GPIO_t* GPIO_init_empty(const GPIO_port_t port, const GPIO_Pin_t pin);
 void GPIO_set_moder(GPIO_t* self, const GPIO_MODER_t mode);
 void GPIO_set_otyper(GPIO_t* self, const GPIO_OTYPER_t type);
 void GPIO_set_odr(GPIO_t* self, const GPIO_ODR_t output);

@@ -43,12 +43,13 @@ set(cpu_PARAMS
 # Sources
 set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/main.c
-	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/gpio/gpio.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/dbgmcu/dbgmcu.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/demcr/demcr.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/exti/exti.c   
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/gpio/gpio.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/itm/itm.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/nvic/nvic.c   
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/rcc/rcc.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/scb/scb.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/syscfg/syscfg.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/timers/systick/systick.c   
@@ -56,6 +57,9 @@ set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/print/printf.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/interrupts/interrupt.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/delay/delay.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/devices/LED/LED.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/devices/button/button.c
+
 )
 
 # Include directories for all compilers

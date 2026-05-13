@@ -45,14 +45,14 @@ static void print_stack(const uint32_t * const fault_stack){
     lr: this is the link register and given the return address
     for the current function that we are on. 
     */
-    printf("r0: 0x%08lX", r0);
-    printf("r1: 0x%08lX", r1);
-    printf("r2: 0x%08lX", r2);
-    printf("r3: 0x%08lX", r3);
-    printf("r12: 0x%08lX", r12);
-    printf("lr: 0x%08lX", lr);
-    printf("pc: 0x%08lX", pc);
-    printf("psr: 0x%08lX", psr);
+    printf("r0: 0x%08lX\n", r0);
+    printf("r1: 0x%08lX\n", r1);
+    printf("r2: 0x%08lX\n", r2);
+    printf("r3: 0x%08lX\n", r3);
+    printf("r12: 0x%08lX\n", r12);
+    printf("lr: 0x%08lX\n", lr);
+    printf("pc: 0x%08lX\n", pc);
+    printf("psr: 0x%08lX\n", psr);
 }
 
 __attribute__((naked)) void HardFault_Handler(void) {

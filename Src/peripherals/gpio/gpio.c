@@ -20,7 +20,6 @@ struct GPIO{
     GPIO_driver_t* driver;
     GPIO_Pin_t pin;
     RCC_t* rcc;
-    __bool taken; 
 };
 
 #define GPIO_MAX_INSTANCES 9
@@ -129,8 +128,14 @@ GPIO_t* GPIO_init(const GPIO_port_t port, const GPIO_Pin_t pin, RCC_t* rcc_obj){
     GPIO_t* self = &gpio_pool[port];
     self->driver = ((GPIO_driver_t*)(GPIO_BASE_ADDRESS + (port * GPIO_OFFSET)));
     self->pin = pin;
+    self->rcc = rcc_obj;
     RCC_en_GPIO(rcc_obj, port);
-    assert(!self->taken);
-    self->taken = TRUE;
+    return self;
+}
+
+GPIO_t* GPIO_init_empty(const GPIO_port_t port, const GPIO_Pin_t pin){
+    GPIO_t* self = &gpio_pool[port];
+    self->driver = ((GPIO_driver_t*)(GPIO_BASE_ADDRESS + (port * GPIO_OFFSET)));
+    self->pin = pin;
     return self;
 }

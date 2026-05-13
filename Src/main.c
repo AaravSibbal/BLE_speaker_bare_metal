@@ -30,28 +30,28 @@ and that makes sense to me.
 
  */
 
-
-
-
-
-#define USER_BTN_PIN ((uint8_t) 0)
-#define USER_BTN_SYSCFG_PORT (SYSCFG_EXTI_PORTA)
-
-// void init_clocks(void);
+#include "def.h"
+#include "devices/LED/LED.h"
+#include "peripherals/gpio/gpio.h"
+#include "peripherals/rcc/rcc.h"
+#include "peripherals/timers/systick/systick.h"
+#include "peripherals/timers/timer.h"
+#include "services/delay/delay.h"
+#include "services/interrupts/interrupt.h"
+#include "arm/arm.h"
 
 int main(void){
-    // init_clocks();
-    // // SYSCFG_enable_EXTI(USER_BTN_SYSCFG_PORT, USER_BTN_PIN);
-    // ITM_init(ITM_ENGINE);
-    // SCB_init(SCB_ENGINE);
-    // SCB_write_priority_grouping(SCB_ENGINE, PRIGROUP_4PRE_0SUB);
+    RCC_t* rcc = init_RCC();
 
+    GPIO_t* green_led_gpio = GPIO_init_empty(LED_GPIO_PORT, LED_get_pin(LED_GREEN));
+    LED_t* green_led = LED_init(LED_GREEN, green_led_gpio, rcc);
+
+    enable_IRQ(SysTick_IRQn);
+    __DSB();
+    __ISB();
+    Timer_t* timer = (Timer_t*)Systick_init(16000000, AHB);
     while(1){
-
+        delay_ms(timer, 100);
+        LED_toggle(green_led);
     }
 }
-
-// void init_clocks(void){
-//     RCC_AHB1_ENR |= (RCC_AHB1_GPIOA_EN) | (RCC_AHB1_GPIOD_EN) | (RCC_AHB1_GPIOB_EN);
-//     RCC_APB2_ENR |= (RCC_APB2_SYSCFG_EN);
-// }
