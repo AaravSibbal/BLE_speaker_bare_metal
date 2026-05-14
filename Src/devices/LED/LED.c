@@ -12,11 +12,12 @@ struct LED{
 
 static LED_t led_pool[4];
 
-LED_t* LED_init(LED_color_t color, GPIO_t* gpio, RCC_t* rcc){
+LED_t* LED_init(LED_color_t color, GPIO_t* gpio){
     uint8_t led_idx = color-12;
     assert(!led_pool[led_idx].taken);
     
     LED_t* self = &led_pool[led_idx];
+    self->gpio = gpio;
     GPIO_set_moder(gpio, GPIO_MODE_OUTPUT);
     
     self->taken = TRUE;

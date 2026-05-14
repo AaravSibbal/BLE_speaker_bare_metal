@@ -14,10 +14,10 @@ typedef enum CLCK_SRC{
 Systick_t* Systick_init(uint32_t clck_speed_hz, Clck_src_t clck_src);
 void Systick_start(void* self);
 void Systick_stop(void* self);
-void Systick_reset(void* self);
-uint32_t Systick_get_ticks();
-void Systick_enable_interrupt();
-void Systick_disable_interrupt();
+void Systick_reset(void);
+uint32_t Systick_get_ticks(void);
+void Systick_enable_interrupt(void);
+void Systick_disable_interrupt(void);
 
 
 void SysTick_Handler(void);

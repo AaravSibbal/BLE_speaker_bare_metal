@@ -15,7 +15,7 @@ typedef enum LED_color{
 
 #define LED_GPIO_PORT GPIO_PORT_D
 
-LED_t* LED_init(LED_color_t color, GPIO_t* gpio, RCC_t* rcc);
+LED_t* LED_init(LED_color_t color, GPIO_t* gpio);
 void LED_toggle(LED_t* self);
 GPIO_Pin_t LED_get_pin(LED_color_t color);
 

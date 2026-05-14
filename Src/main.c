@@ -43,8 +43,8 @@ and that makes sense to me.
 int main(void){
     RCC_t* rcc = init_RCC();
 
-    GPIO_t* green_led_gpio = GPIO_init_empty(LED_GPIO_PORT, LED_get_pin(LED_GREEN));
-    LED_t* green_led = LED_init(LED_GREEN, green_led_gpio, rcc);
+    GPIO_t* green_led_gpio = GPIO_init(LED_GPIO_PORT, LED_get_pin(LED_GREEN), rcc);
+    LED_t* green_led = LED_init(LED_GREEN, green_led_gpio);
 
     enable_IRQ(SysTick_IRQn);
     __DSB();

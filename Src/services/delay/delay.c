@@ -1,13 +1,13 @@
 #include "delay.h"
 
 void delay_ms(Timer_t* timer, uint32_t ms){
-    timer->reset(timer); // make sure that ticks is 0
+    timer->reset(); // make sure that ticks is 0
     timer->start(timer);
     uint32_t curr_ticks = timer->get_ticks();
-    while((ms - timer->get_ticks(timer)) != 0){
+    while(1){
         __WFI();
         curr_ticks = timer->get_ticks();
-        if((ms-curr_ticks) == 0){
+        if(curr_ticks >= ms){
             break;
         }
     }

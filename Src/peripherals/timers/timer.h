@@ -6,8 +6,8 @@
 typedef struct Timer{
     void (*start)(void *self);
     void (*stop)(void *self);
-    void (*reset)(void *self);
-    uint32_t (*get_ticks)();
+    void (*reset)(void);
+    uint32_t (*get_ticks)(void);
 }Timer_t;
 
 #endif
