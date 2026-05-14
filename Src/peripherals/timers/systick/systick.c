@@ -1,8 +1,8 @@
 #include "systick.h"
-#include "Src/arm/arm.h"
-#include "Src/def.h"
-#include "Src/services/interrupts/interrupt.h"
-#include "assert.h"
+#include "../../../services/print/printf.h"
+#include "../../../services/interrupts/interrupt.h"
+#include "../../../assert.h"
+#include "../../../arm/arm.h"
 
 typedef struct Systick_driver{
     __IO uint32_t ctrl;
@@ -36,7 +36,7 @@ uint32_t Systick_get_ticks(){
 }
 
 __STATIC_INLINE void Systick_disable_clock(Systick_t* self){
-    assert(self != NULL);
+    BARE_ASSERT(self != NULL);
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
     self->driver->ctrl &= ~((uint32_t)1<<0);
@@ -44,7 +44,7 @@ __STATIC_INLINE void Systick_disable_clock(Systick_t* self){
 }
 
 void Systick_stop(void *self){
-    assert(self != NULL);
+    BARE_ASSERT(self != NULL);
     Systick_t* systick_device = (Systick_t*)self;
     Systick_disable_clock(systick_device);
 }
@@ -65,7 +65,7 @@ __INLINE void Systick_disable_interrupt(){
 }
 
 static inline void Systick_set_reload_val(Systick_t* self, uint32_t clock_speed_HZ){
-    assert(self != NULL);
+    BARE_ASSERT(self != NULL);
     // example I get 16,000,000
     uint32_t reload_value = (clock_speed_HZ/1000) - 1;
     reload_value &= MAX_RELOAD_VAL;
@@ -77,14 +77,14 @@ static inline void Systick_reset_counter(){
 }
 
 static inline void Systick_start_clock(void* self){
-    assert(self != NULL);
+    BARE_ASSERT(self != NULL);
     Systick_t* systick_device = (Systick_t *)self;
     systick_device->driver->ctrl &= ~(CTRL_COUNTER_EN_MSK);
     systick_device->driver->ctrl |= CTRL_COUNTER_EN_MSK;
 }
 
 static inline void Systick_select_clock_src(Systick_t* self, Clck_src_t clck_src){
-    assert(self != NULL);
+    BARE_ASSERT(self != NULL);
     self->driver->ctrl &= ~(CLKSOURCE_SET_MSK);
     if(clck_src == AHB){
         self->driver->ctrl |= (CLKSOURCE_SET_MSK);   
@@ -92,7 +92,7 @@ static inline void Systick_select_clock_src(Systick_t* self, Clck_src_t clck_src
 }
 
 static inline void Systick_setup(Systick_t* self, uint32_t clck_speed_hz, Clck_src_t clck_src){
-    assert(self != NULL);
+    BARE_ASSERT(self != NULL);
     Systick_set_reload_val(self, clck_speed_hz);
     Systick_reset_counter(self);
     Systick_select_clock_src(self, clck_src);

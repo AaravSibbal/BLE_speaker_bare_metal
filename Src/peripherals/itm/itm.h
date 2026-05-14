@@ -3,11 +3,7 @@
 
 #include "../../def.h"
 #include "../gpio/gpio.h"
-#include "../dbgmcu/dbgmcu.h"
-#include "../demcr/demcr.h"
-#include "../tpiu/tpiu.h"
 #include "../rcc/rcc.h"
-
 
 typedef struct ITM ITM_t;
 

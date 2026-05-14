@@ -2,7 +2,7 @@
 #define SYSTICK_H
 
 #include "../timer.h"
-#include "../../../services/print/printf.h"
+#include "../../../def.h"
 
 typedef struct Systick Systick_t;
 

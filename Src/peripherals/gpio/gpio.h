@@ -3,7 +3,6 @@
 
 
 #include "../../def.h"
-#include "../../arm/arm.h"
 #include "../rcc/rcc.h"
 
 typedef struct GPIO GPIO_t; 

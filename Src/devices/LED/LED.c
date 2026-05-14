@@ -1,7 +1,4 @@
 #include "LED.h"
-#include "Src/def.h"
-#include "Src/peripherals/gpio/gpio.h"
-#include "Src/peripherals/rcc/rcc.h"
 
 struct LED{
     GPIO_t* gpio;
@@ -14,7 +11,7 @@ static LED_t led_pool[4];
 
 LED_t* LED_init(LED_color_t color, GPIO_t* gpio){
     uint8_t led_idx = color-12;
-    assert(!led_pool[led_idx].taken);
+    BARE_ASSERT(!led_pool[led_idx].taken);
     
     LED_t* self = &led_pool[led_idx];
     self->gpio = gpio;

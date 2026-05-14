@@ -1,5 +1,6 @@
 #include "gpio.h"
-#include "assert.h"
+#include "../../assert.h"
+#include "../../arm/arm.h"
 
 #define GPIO_BASE_ADDRESS (0x40020000)
 #define GPIO_OFFSET (0x400)
@@ -25,9 +26,9 @@ struct GPIO{
 #define GPIO_MAX_INSTANCES 9
 static GPIO_t gpio_pool[GPIO_MAX_INSTANCES];
 
-__STATIC_INLINE void GPIO_assert_self_and_driver(GPIO_t* self){
-    assert(self != NULL);
-    assert(self->driver != NULL);
+__STATIC_INLINE void GPIO_BARE_ASSERT_self_and_driver(GPIO_t* self){
+    BARE_ASSERT(self != NULL);
+    BARE_ASSERT(self->driver != NULL);
 }
 
 __STATIC_INLINE uint32_t GPIO_get_msk(const GPIO_Pin_t pin, 
@@ -43,7 +44,7 @@ const GPIO_Pin_t pin, const uint32_t num_bits){
 #define MODER_ACCESS_BITS 2UL
 
 void GPIO_set_moder(GPIO_t* self, const GPIO_MODER_t mode){
-    GPIO_assert_self_and_driver(self);
+    GPIO_BARE_ASSERT_self_and_driver(self);
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
     self->driver->MODER &= ~(GPIO_get_msk(self->pin, MODER_ACCESS_BITS));
@@ -57,7 +58,7 @@ void GPIO_set_moder(GPIO_t* self, const GPIO_MODER_t mode){
 #define OTYPER_ACCESS_BITS 1UL
 
 void GPIO_set_otyper(GPIO_t* self, const GPIO_OTYPER_t type){
-    GPIO_assert_self_and_driver(self);
+    GPIO_BARE_ASSERT_self_and_driver(self);
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
     self->driver->OTYPER &= ~(GPIO_get_msk(self->pin, OTYPER_ACCESS_BITS));
@@ -72,7 +73,7 @@ void GPIO_set_otyper(GPIO_t* self, const GPIO_OTYPER_t type){
 #define ODR_ACCESS_BITS 1UL
 
 __STATIC_INLINE void GPIO_set_bsrr(GPIO_t* self, const GPIO_ODR_t val){
-    GPIO_assert_self_and_driver(self);
+    GPIO_BARE_ASSERT_self_and_driver(self);
     if(val == GPIO_OUTPUT_HIGH){
         self->driver->BSRR = (1UL<<self->pin);
     }else{
@@ -81,7 +82,7 @@ __STATIC_INLINE void GPIO_set_bsrr(GPIO_t* self, const GPIO_ODR_t val){
 }
 
 void GPIO_set_odr(GPIO_t* self, const GPIO_ODR_t output){
-    GPIO_assert_self_and_driver(self);
+    GPIO_BARE_ASSERT_self_and_driver(self);
     GPIO_set_bsrr(self, output);
 }
 
@@ -89,7 +90,7 @@ void GPIO_set_odr(GPIO_t* self, const GPIO_ODR_t output){
 #define ALT_ACCESS_BITS 4UL
 
 void GPIO_set_alt_func(GPIO_t* self, const GPIO_AFx_t function){
-    GPIO_assert_self_and_driver(self);
+    GPIO_BARE_ASSERT_self_and_driver(self);
     
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
@@ -113,7 +114,7 @@ void GPIO_set_alt_func(GPIO_t* self, const GPIO_AFx_t function){
 #define PUPDR_ACCESS_BITS 2UL
 
 void GPIO_set_pupdr(GPIO_t *self, const PUPDR_t val){
-    GPIO_assert_self_and_driver(self);
+    GPIO_BARE_ASSERT_self_and_driver(self);
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
     self->driver->PUPDR &= ~(GPIO_get_msk(self->pin, PUPDR_ACCESS_BITS));

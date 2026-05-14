@@ -3,6 +3,7 @@
 
 #include "../../def.h"
 #include "../../peripherals/gpio/gpio.h"
+#include "../../assert.h"
 
 typedef struct LED LED_t;
 
