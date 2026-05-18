@@ -2,20 +2,12 @@
 #define SYSCFG_H
 
 #include "../../def.h"
+#include "Src/peripherals/rcc/rcc.h"
 
-#define SYSCFG_BASE (0x40013800)
-#define EXTICR1_PA_BIT (0b0000)
-#define EXTICR1_BIT_MSK ((1UL<<4)-1)
 
-typedef struct SYSCFG{
-    __IO uint32_t SYSCFG_MEMRMP;
-    __IO uint32_t SYSCFG_PMC;
-    __IO uint32_t SYSCFG_EXTICR[4];
-    uint32_t RESERVED[2];
-    __IO uint32_t SYSCFG_CMPCR;
-} SYSCFG_t;
 
-#define SYSCFG_ENGINE ((SYSCFG_t *) SYSCFG_BASE)
+typedef struct SYSCFG SYSCFG_t;
+
 
 typedef enum SYSCFG_EXTI_Port {
     SYSCFG_EXTI_PORTA = 0,
@@ -29,9 +21,10 @@ typedef enum SYSCFG_EXTI_Port {
     SYSCFG_EXTI_PORTI
 } SYSCFG_EXTI_Port_t;
 
+SYSCFG_t* SYSCFG_init(RCC_t* rcc);
 /**
  * values can range from 0-15
  */
-void SYSCFG_enable_EXTI(SYSCFG_EXTI_Port_t port, uint8_t pin);
+void SYSCFG_enable_EXTI(SYSCFG_t* self, GPIO_port_t port, uint8_t pin);
 
 #endif

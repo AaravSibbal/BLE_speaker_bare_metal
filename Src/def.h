@@ -51,8 +51,6 @@ __INLINE uint32_t bit_band_get_addr(const uint32_t address, const uint32_t bit){
 
 __INLINE void bit_band_write(const uint32_t addr, const uint32_t bit, const uint32_t val){
 	uint32_t alias_addr = bit_band_get_addr(addr, bit);
-	// BARE_ASSERT(alias_addr != 0);
-	// BARE_ASSERT(val == 0 || val == 1);
 	(*(volatile uint32_t *)alias_addr) = val;
 }
 
@@ -61,7 +59,7 @@ typedef enum {
 	TRUE
 } __bool;
 
-__INLINE uint32_t msk_of_ones(uint32_t num){
+__INLINE uint32_t msk_of_ones(const uint32_t num){
 	return ((uint32_t)((1UL << (num)) - 1));
 }
 
@@ -75,6 +73,7 @@ typedef enum GPIO_port{
     GPIO_PORT_G,
     GPIO_PORT_H,
     GPIO_PORT_I,
+    GPIO_PORT_NONE
 }GPIO_port_t;
 
 /**

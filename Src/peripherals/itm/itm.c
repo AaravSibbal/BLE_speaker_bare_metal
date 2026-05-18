@@ -2,6 +2,7 @@
 #include "../dbgmcu/dbgmcu.h"
 #include "../demcr/demcr.h"
 #include "../tpiu/tpiu.h"
+#include "Src/arm/arm.h"
 
 #define ITM_BASE (0xE0000000)
 #define ITM_UNLOCK_MAGIC_WRITE (0xC5ACCE55)

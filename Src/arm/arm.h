@@ -51,4 +51,20 @@ __attribute__((always_inline)) static inline void __DMB(void)
   __asm volatile ("dmb 0xF":::"memory");
 }
 
+__attribute__((always_inline)) static inline int32_t __LDREXW(volatile uint32_t *addr)
+{
+    uint32_t result;
+
+   __asm volatile ("ldrex %0, %1" : "=r" (result) : "Q" (*addr) );
+   return(result);
+}
+
+__attribute__((always_inline)) static inline uint32_t __STREXW(uint32_t value, volatile uint32_t *addr)
+{
+   uint32_t result;
+
+   __asm volatile ("strex %0, %2, %1" : "=&r" (result), "=Q" (*addr) : "r" (value) );
+   return(result);
+}
+
 #endif
