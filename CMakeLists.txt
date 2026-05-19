@@ -56,7 +56,6 @@ set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/timers/systick/systick.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/tpiu/tpiu.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/interrupts/interrupt.c
-	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/delay/delay.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/devices/LED/LED.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/devices/button/button.c
 

@@ -1,12 +1,12 @@
 #ifndef BUTTON_H
 #define BUTTON_H
 
-#include "../../peripherals/gpio/gpio.h"
+#include "stdint.h"
 
-typedef struct Button Button_t;
+extern volatile uint8_t button_history;
 
-Button_t* Button_init(GPIO_t* gpio, RCC_t* rcc);
-
+#define BUTTON_GPIO_PORT GPIO_PORT_A
+#define BUTTON_GPIO_PIN GPIO_PIN_0
 
 
 #endif

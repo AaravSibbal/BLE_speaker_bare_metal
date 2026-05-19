@@ -30,13 +30,13 @@ and that makes sense to me.
 
  */
 
+#include "Src/peripherals/rcc/rcc.h"
 #include "def.h"
 #include "devices/LED/LED.h"
+#include "devices/button/button.h"
 #include "peripherals/gpio/gpio.h"
 #include "peripherals/rcc/rcc.h"
 #include "peripherals/timers/systick/systick.h"
-#include "peripherals/timers/timer.h"
-#include "services/delay/delay.h"
 #include "services/interrupts/interrupt.h"
 #include "arm/arm.h"
 
@@ -46,12 +46,29 @@ int main(void){
     GPIO_t* green_led_gpio = GPIO_init(LED_GPIO_PORT, LED_get_pin(LED_GREEN), rcc);
     LED_t* green_led = LED_init(LED_GREEN, green_led_gpio);
 
+    // GPIO_t* button_gpio = GPIO_init_empty(GPIO_PORT_A, GPIO_PIN_0);
+    RCC_en_GPIO(rcc, BUTTON_GPIO_PORT);
+
     enable_IRQ(SysTick_IRQn);
     __DSB();
     __ISB();
-    Timer_t* timer = (Timer_t*)Systick_init(16000000, AHB);
+    Systick_t* systick = Systick_init(16000000, AHB);
+    Systick_start_clock(systick);
+    uint32_t ms;
+    uint32_t last_ticks = Systick_get_ticks();
+    uint32_t curr_ticks;
     while(1){
-        delay_ms(timer, 100);
-        LED_toggle(green_led);
+        if(button_history == 0x00){
+            ms = 1000;
+        }else if(button_history == 0xFF){
+            ms = 100;
+        }
+        curr_ticks = Systick_get_ticks();
+        if((curr_ticks - last_ticks) >= ms){
+            LED_toggle(green_led);
+            last_ticks = curr_ticks;
+        }
+        // delay_ms(timer, 100);
+        __WFI();
     }
 }

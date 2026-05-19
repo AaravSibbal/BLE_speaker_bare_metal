@@ -26,6 +26,11 @@ EXTI_error_t EXTI_config_line(EXTI_t* self, SYSCFG_t* syscfg, EXTI_line_t line, 
     BARE_ASSERT(syscfg != NULL);
     BARE_ASSERT(config!= NULL);
 
+    if(line >= 16){
+        printf_("Haven't implemented exti line >= 16 %d\n", line);
+        return EXTI_CONFIG_FAIL;
+    }
+
     switch(config->mode){
         case EXTI_MODE_INTERRUPT:
             EXTI_set_IMR(self, line, EXTI_SET);
@@ -47,6 +52,7 @@ EXTI_error_t EXTI_config_line(EXTI_t* self, SYSCFG_t* syscfg, EXTI_line_t line, 
             printf_("someone didn't use the exti_mode_t enum :(, val: %d\n", config->mode); 
             return EXTI_BAD_CONFIG_MODE;
     }
+
     switch(config->trigger){
         case EXTI_NONE_TRIGGER:
             EXTI_set_RTSR(self, line, EXTI_CLEAR);
@@ -68,12 +74,8 @@ EXTI_error_t EXTI_config_line(EXTI_t* self, SYSCFG_t* syscfg, EXTI_line_t line, 
             printf_("someone didn't use exti_trigger_t enum :(, val: %d\n", config->trigger);
             return EXTI_BAD_CONFIG_TRIGGER;
     }
-    if(line >= 16){
-        printf_("Haven't implemented exti line >= 16 %d\n", line);
-        return EXTI_CONFIG_FAIL;
-    }else{
-        SYSCFG_enable_EXTI(syscfg, config->port, line);
-    }
+
+    SYSCFG_enable_EXTI(syscfg, config->port, line);
 
     if(config->mode != EXTI_MODE_BOTH && config->mode != EXTI_MODE_INTERRUPT){
         return EXTI_SUCCESS;

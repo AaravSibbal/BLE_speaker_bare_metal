@@ -1,6 +1,7 @@
 #include "gpio.h"
 #include "../../assert.h"
 #include "../../arm/arm.h"
+#include "Src/def.h"
 
 #define GPIO_BASE_ADDRESS (0x40020000)
 #define GPIO_OFFSET (0x400)
@@ -139,4 +140,13 @@ GPIO_t* GPIO_init_empty(const GPIO_port_t port, const GPIO_Pin_t pin){
     self->driver = ((GPIO_driver_t*)(GPIO_BASE_ADDRESS + (port * GPIO_OFFSET)));
     self->pin = pin;
     return self;
+}
+
+__STATIC_INLINE GPIO_driver_t* GPIO_get_driver(const GPIO_port_t port){
+    return ((GPIO_driver_t*)(GPIO_BASE_ADDRESS + (port * GPIO_OFFSET)));
+}
+
+uint32_t GPIO_get_IDR_G(const GPIO_port_t port, const GPIO_Pin_t pin){
+    GPIO_driver_t* driver = GPIO_get_driver(port);
+    return (0x01UL & (driver->IDR >> pin));
 }

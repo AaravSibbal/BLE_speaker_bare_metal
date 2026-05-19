@@ -78,6 +78,7 @@ void GPIO_set_otyper(GPIO_t* self, const GPIO_OTYPER_t type);
 void GPIO_set_odr(GPIO_t* self, const GPIO_ODR_t output);
 void GPIO_set_alt_func(GPIO_t* self, const GPIO_AFx_t function);
 void GPIO_set_pupdr(GPIO_t *self, const PUPDR_t val);
+uint32_t GPIO_get_IDR_G(GPIO_port_t port, GPIO_Pin_t pin);
 
 
 #endif

@@ -3,6 +3,8 @@
 #include "../../../services/interrupts/interrupt.h"
 #include "../../../assert.h"
 #include "../../../arm/arm.h"
+#include "../../../devices/button/button.h"
+#include "../../gpio/gpio.h"
 
 typedef struct Systick_driver{
     __IO uint32_t ctrl;
@@ -16,7 +18,6 @@ static Systick_t systick_obj;
 
 
 struct Systick{
-    Timer_t timer;
     Systick_driver_t* driver;
 };
 
@@ -76,7 +77,7 @@ static inline void Systick_reset_counter(){
     ticks = 0;
 }
 
-static inline void Systick_start_clock(void* self){
+void Systick_start_clock(void* self){
     BARE_ASSERT(self != NULL);
     Systick_t* systick_device = (Systick_t *)self;
     systick_device->driver->ctrl &= ~(CTRL_COUNTER_EN_MSK);
@@ -100,19 +101,18 @@ static inline void Systick_setup(Systick_t* self, uint32_t clck_speed_hz, Clck_s
 }
 
 void SysTick_Handler(void){
-    clear_pending_IRQ(SysTick_IRQn);
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    // critical section
     ticks++;
+    uint32_t gpio_idr_val = GPIO_get_IDR_G(BUTTON_GPIO_PORT, BUTTON_GPIO_PIN);
+    button_history = (button_history << 1) | gpio_idr_val;
+    __set_PRIMASK(primask);
 }
-
-
 
 Systick_t* Systick_init(uint32_t clck_speed_hz, Clck_src_t clck_src){
     Systick_t* self = &systick_obj;
     self->driver = ((Systick_driver_t *)(SYSTICK_BASE_ADDRESS));
     Systick_setup(self, clck_speed_hz, clck_src);
-    self->timer.get_ticks = Systick_get_ticks;
-    self->timer.start = Systick_start_clock;
-    self->timer.reset = Systick_reset_counter;
-    self->timer.stop = Systick_stop;
     return self;
 }

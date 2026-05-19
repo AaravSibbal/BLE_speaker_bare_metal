@@ -63,10 +63,9 @@ typedef enum EXTI_error_t{
     EXTI_BAD_CONFIG_MODE = 2, 
     EXTI_BAD_CONFIG_TRIGGER = 3,
     EXTI_BAD_LINE = 4
-
 }EXTI_error_t;
 
-EXTI_t* EXTI_init();
+EXTI_t* EXTI_init(void);
 EXTI_error_t EXTI_config_line(EXTI_t* self, SYSCFG_t* syscfg, EXTI_line_t line, EXTI_config_t* config);
 void EXTI_set_IMR(EXTI_t* self, const EXTI_line_t line, const EXTI_state_t val);
 void EXTI_set_EMR(EXTI_t* self, const EXTI_line_t line, const EXTI_state_t val);
