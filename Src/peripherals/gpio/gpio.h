@@ -7,6 +7,7 @@
 
 typedef struct GPIO GPIO_t; 
 
+
 typedef enum GPIO_MODER {
     GPIO_MODE_INPUT = 0x00,
     GPIO_MODE_OUTPUT = 0x01,
@@ -63,21 +64,20 @@ typedef enum GPIO_Pin {
 
 }GPIO_Pin_t;
 
-typedef enum PUPDR_val{
+typedef enum GPIO_PUPDR{
     NO_PUPD = 0,
     PULL_UP,
     PULL_DOWN
-}PUPDR_t;
+}GPIO_PUPDR_t;
 
 
 
-GPIO_t* GPIO_init(const GPIO_port_t port, const GPIO_Pin_t pin, RCC_t* rcc_obj);
-GPIO_t* GPIO_init_empty(const GPIO_port_t port, const GPIO_Pin_t pin);
-void GPIO_set_moder(GPIO_t* self, const GPIO_MODER_t mode);
-void GPIO_set_otyper(GPIO_t* self, const GPIO_OTYPER_t type);
-void GPIO_set_odr(GPIO_t* self, const GPIO_ODR_t output);
-void GPIO_set_alt_func(GPIO_t* self, const GPIO_AFx_t function);
-void GPIO_set_pupdr(GPIO_t *self, const PUPDR_t val);
+GPIO_t* GPIO_init(const GPIO_port_t port, RCC_t* rcc);
+void GPIO_set_moder(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_MODER_t mode);
+void GPIO_set_otyper(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_OTYPER_t type);
+void GPIO_set_odr(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_ODR_t output);
+void GPIO_set_alt_func(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_AFx_t function);
+void GPIO_set_pupdr(GPIO_t *self, const GPIO_Pin_t pin, const GPIO_PUPDR_t val);
 uint32_t GPIO_get_IDR_G(GPIO_port_t port, GPIO_Pin_t pin);
 
 

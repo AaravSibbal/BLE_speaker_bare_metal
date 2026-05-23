@@ -1,4 +1,5 @@
 #include "rcc.h"
+#include "Src/def.h"
 
 typedef struct RCC{
     __IO uint32_t CR;
@@ -64,4 +65,25 @@ void RCC_en_SYSCFG(RCC_t* self){
 void RCC_dis_SYSCFG(RCC_t* self){
     uint32_t addr = (uint32_t)(&self->APB2ENR);
     bit_band_write(addr, SYSCFG_BIT, DISABLE);
+}
+
+#define I2C1_BIT 21
+
+void RCC_en_I2C1(RCC_t* self){
+    uint32_t addr = (uint32_t)(&self->APB1ENR);
+    bit_band_write(addr, I2C1_BIT, ENABLE);
+}
+
+#define I2C2_BIT 22
+
+void RCC_en_I2C2(RCC_t* self){
+    uint32_t addr = (uint32_t)(&self->APB1ENR);
+    bit_band_write(addr, I2C2_BIT, ENABLE);
+}
+
+#define I2C3_BIT 23
+
+void RCC_en_I2C3(RCC_t* self){
+    uint32_t addr = (uint32_t)(&self->APB1ENR);
+    bit_band_write(addr, I2C3_BIT, ENABLE);
 }

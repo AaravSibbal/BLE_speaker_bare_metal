@@ -1,7 +1,9 @@
 #include "LED.h"
+#include "Src/peripherals/gpio/gpio.h"
 
 struct LED{
-    GPIO_t* gpio;
+    GPIO_t* gpio_driver;
+    GPIO_Pin_t gpio_pin;
     LED_color_t color;
     __bool taken;
     __bool is_on;
@@ -14,8 +16,14 @@ LED_t* LED_init(LED_color_t color, GPIO_t* gpio){
     BARE_ASSERT(!led_pool[led_idx].taken);
     
     LED_t* self = &led_pool[led_idx];
-    self->gpio = gpio;
-    GPIO_set_moder(gpio, GPIO_MODE_OUTPUT);
+    self->gpio_driver = gpio;
+    self->gpio_pin = LED_get_pin(color);
+
+    GPIO_set_moder(
+        gpio, 
+        self->gpio_pin,
+         GPIO_MODE_OUTPUT
+    );
     
     self->taken = TRUE;
     self->is_on = FALSE;
@@ -24,9 +32,17 @@ LED_t* LED_init(LED_color_t color, GPIO_t* gpio){
 
 void LED_toggle(LED_t* self){
     if(self->is_on){
-        GPIO_set_odr(self->gpio, GPIO_OUTPUT_LOW);
+        GPIO_set_odr(
+            self->gpio_driver, 
+            self->gpio_pin, 
+            GPIO_OUTPUT_LOW
+        );
     }else{
-        GPIO_set_odr(self->gpio, GPIO_OUTPUT_HIGH);
+        GPIO_set_odr(
+            self->gpio_driver, 
+            self->gpio_pin, 
+            GPIO_OUTPUT_HIGH
+        );
     }
     self->is_on = !self->is_on;
 }

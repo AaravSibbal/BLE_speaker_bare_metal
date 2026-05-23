@@ -10,6 +10,10 @@ void RCC_en_GPIO(RCC_t* self, GPIO_port_t port);
 void RCC_dis_GPIO(RCC_t* self, GPIO_port_t port);
 void RCC_en_SYSCFG(RCC_t* self); 
 void RCC_dis_SYSCFG(RCC_t* self); 
+void RCC_en_I2C1(RCC_t* self);
+void RCC_en_I2C2(RCC_t* self);
+void RCC_en_I2C3(RCC_t* self);
+
 
 // #define CCR_OFFSET (0x00)
 // #define AHB1_ENR_OFFSET (0x30)

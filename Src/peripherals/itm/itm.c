@@ -3,11 +3,16 @@
 #include "../demcr/demcr.h"
 #include "../tpiu/tpiu.h"
 #include "Src/arm/arm.h"
+#include "Src/def.h"
+#include "Src/peripherals/gpio/gpio.h"
 
 #define ITM_BASE (0xE0000000)
 #define ITM_UNLOCK_MAGIC_WRITE (0xC5ACCE55)
 #define ITM_GLOBAL_EN_MSK (1<<0)
 #define ITM_ENGINE ((ITM_driver_t *) ITM_BASE)
+#define ITM_GPIO_PORT GPIO_PORT_B
+#define ITM_GPIO_PIN GPIO_PIN_3
+
 
 typedef struct ITM_driver{
     __IO uint32_t ITM_stim_port[32];
@@ -35,8 +40,8 @@ static void ITM_enable(ITM_t* self){
 }
 
 static void ITM_gpio_setup(ITM_t* self){
-    GPIO_set_moder(self->gpio, GPIO_MODE_ALT);
-    GPIO_set_alt_func(self->gpio, AF0);
+    GPIO_set_moder(self->gpio, ITM_GPIO_PIN, GPIO_MODE_ALT);
+    GPIO_set_alt_func(self->gpio, ITM_GPIO_PIN, AF0);
 }
 
 static void ITM_unlock_port(ITM_t* self, uint8_t port){
@@ -51,7 +56,7 @@ static void ITM_unlock_port(ITM_t* self, uint8_t port){
 
 ITM_t* ITM_init(ITM_t* self, GPIO_t* gpio, RCC_t* rcc_obj){
     self->driver = ITM_ENGINE;
-    self->gpio = GPIO_init(GPIO_PORT_B, GPIO_PIN_3, rcc_obj);
+    self->gpio = GPIO_init(GPIO_PORT_B, rcc_obj);
     ITM_gpio_setup(self);
     DEMCR_enable_trace();
     DBGMCU_debug_enable(DBGMCU_ASYNC);

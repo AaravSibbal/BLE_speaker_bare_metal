@@ -1,6 +1,7 @@
 #ifndef DEF_H
 #define DEF_H
 
+#include "Src/arm/arm.h"
 #include <stdint.h>
 
 #define __IO volatile 
@@ -54,14 +55,38 @@ __INLINE void bit_band_write(const uint32_t addr, const uint32_t bit, const uint
 	(*(volatile uint32_t *)alias_addr) = val;
 }
 
+__INLINE uint32_t msk_of_ones(const uint32_t num){
+	return ((uint32_t)((1UL << (num)) - 1));
+}
+
+__INLINE void rwm32_sram(volatile uint32_t* addr, 
+uint32_t bit, uint32_t field_len, uint32_t val){
+    uint32_t current_val;
+    uint32_t status;
+    do{
+        current_val = __LDREXW(addr);
+        current_val &= ~(msk_of_ones(field_len)<<bit);
+        current_val |= (val<<bit);
+        status = __STREXW(current_val, addr);
+    }while(status != 0);
+}
+
+__INLINE void rwm32_hw(volatile uint32_t* addr, 
+uint32_t bit, uint32_t field_len, uint32_t val){
+	uint32_t primask = __get_PRIMASK();
+	__disable_irq();
+	uint32_t curr_val = *addr;
+    curr_val &= ~(msk_of_ones(field_len) << bit);
+    curr_val |= (val << bit);
+    *addr = curr_val;
+    // syncronize the data here to make sure the chnages go trough
+    __DSB(); 
+    __set_PRIMASK(primask);
+}
 typedef enum {
 	FALSE = 0, 
 	TRUE
 } __bool;
-
-__INLINE uint32_t msk_of_ones(const uint32_t num){
-	return ((uint32_t)((1UL << (num)) - 1));
-}
 
 typedef enum GPIO_port{
     GPIO_PORT_A = 0,

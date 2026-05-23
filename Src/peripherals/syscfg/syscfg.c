@@ -23,13 +23,9 @@ SYSCFG_t* SYSCFG_init(RCC_t* rcc){
 void SYSCFG_enable_EXTI(SYSCFG_t* self, GPIO_port_t port, uint8_t pin){
     uint32_t EXTI_idx = (pin/4);
     uint32_t EXTI_bit = ((pin % 4) * 4);
-    volatile uint32_t* addr = &self->EXTICR[EXTI_idx];
-    uint32_t current_val;
-    uint32_t status;
-    do{
-        current_val = __LDREXW(addr);
-        current_val &= ~(EXTICR1_BIT_MSK<<EXTI_bit);
-        current_val |= (port<<EXTI_bit);
-        status = __STREXW(current_val, addr);
-    }while(status != 0);
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq()
+    self->EXTICR[EXTI_idx] &= ~(EXTICR1_BIT_MSK<<EXTI_bit);
+    self->EXTICR[EXTI_idx] |= (port<<EXTI_bit);
+    __set_PRIMASK(primask);
 }

@@ -41,13 +41,15 @@ and that makes sense to me.
 #include "arm/arm.h"
 
 int main(void){
+    
     RCC_t* rcc = init_RCC();
+    RCC_en_GPIO(rcc, BUTTON_GPIO_PORT);
+    RCC_en_GPIO(rcc, GPIO_PORT_D);
 
-    GPIO_t* green_led_gpio = GPIO_init(LED_GPIO_PORT, LED_get_pin(LED_GREEN), rcc);
+    GPIO_t* green_led_gpio = GPIO_init(GPIO_PORT_D, rcc);
     LED_t* green_led = LED_init(LED_GREEN, green_led_gpio);
 
     // GPIO_t* button_gpio = GPIO_init_empty(GPIO_PORT_A, GPIO_PIN_0);
-    RCC_en_GPIO(rcc, BUTTON_GPIO_PORT);
 
     enable_IRQ(SysTick_IRQn);
     __DSB();
