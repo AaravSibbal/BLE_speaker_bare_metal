@@ -2,6 +2,7 @@
 #include "I2C.H"
 
 #include "../../assert.h"
+#include "Src/arm/arm.h"
 #include "Src/assert.h"
 #include "Src/def.h"
 #include "Src/peripherals/gpio/gpio.h"
@@ -37,6 +38,8 @@ static I2C_driver_t* I2C_get_instance(const I2C_instance_t instance){
             return NULL;
     } 
 }
+
+i2c_driver_t* I2C1_instance = I2C_get_instance(I2C_1);
 
 #define SWRST_BIT 15
 
@@ -220,5 +223,28 @@ GPIO_Pin_t scl_pin, uint32_t clock_speed_Mhz, RCC_t* rcc){
     I2C_set_ccr(i2c->driver, ccr_val);
     I2C_set_trise(i2c->driver, trise_val);
 
+
     I2C_en_peripheral(i2c->driver);
+}
+
+#define ADDR_BIT 1UL
+#define ADDR_BIT_MSK (1UL<<ADDR_BIT)
+
+#define TxE_BIT 7UL
+#define TxE_BIT_MSK (1UL<<TxE_BIT)
+
+void I2C1_EV_IRQHandler(){
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    
+    I2C_driver_t* driver = I2C1_instance;
+
+    if(driver->SR1 & ADDR_BIT_MSK){
+        // address for the slave matched
+        uint32_t dummy_read = driver->SR1;
+        dummy_read = driver->SR2;
+    }
+    if(driver->SR1 & TxE_BIT_MSK)
+
+    __set_PRIMASK(primask);
 }

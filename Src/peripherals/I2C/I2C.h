@@ -38,6 +38,13 @@ typdef enum I2C_mode{
     I2C_MODE_FAST = 1
 }I2C_mode_t;
 
+typedef enum I2C_state_machine{
+    I2C_STATE_READY = 0,
+    I2C_STATE_BUSY_TX,
+    I2C_STATE_BUSY_RX,
+    I2C_STATE_DONE
+} I2C_state_machine_t;
+
 I2C_driver_t* I2C_get_instance(const I2C_instance_t instance);
 void I2C_en_reset(I2C_driver_t* driver);
 void I2C_en_interrupts(I2C_driver_t* driver);
@@ -49,6 +56,9 @@ void I2C_set_ccr(I2C_driver_t* driver, uint32_t ccr_val);
 void I2C_set_trise(I2C_driver_t* driver, uint32_t trise_val);
 void I2C_en_peripheral(I2C_driver_t* driver);
 void I2C_en_clock(I2C_instance_t instance);
+
+
+uint32_t I2C_get_ADDR_bit(I2C_driver_t* driver);
 
 I2C_t* I2C_init(I2C_instance_t instance, I2C_mode_t mode, 
     GPIO_port_t sda_port, GPIO_Pin_t sda_pin, GPIO_port_t scl_port, 
