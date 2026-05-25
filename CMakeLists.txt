@@ -49,6 +49,10 @@ set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/print/printf.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/exti/exti.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/gpio/gpio.c   
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/I2C/I2C.c 
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/data_structure/queue/queue.c 
+
+
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/nvic/nvic.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/rcc/rcc.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/scb/scb.c   

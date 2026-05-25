@@ -59,17 +59,17 @@ __INLINE uint32_t msk_of_ones(const uint32_t num){
 	return ((uint32_t)((1UL << (num)) - 1));
 }
 
-__INLINE void rwm32_sram(volatile uint32_t* addr, 
-uint32_t bit, uint32_t field_len, uint32_t val){
-    uint32_t current_val;
-    uint32_t status;
-    do{
-        current_val = __LDREXW(addr);
-        current_val &= ~(msk_of_ones(field_len)<<bit);
-        current_val |= (val<<bit);
-        status = __STREXW(current_val, addr);
-    }while(status != 0);
-}
+// __INLINE void rwm32_sram(volatile uint32_t* addr, 
+// uint32_t bit, uint32_t field_len, uint32_t val){
+//     uint32_t current_val;
+//     uint32_t status;
+//     do{
+//         current_val = __LDREXW(addr);
+//         current_val &= ~(msk_of_ones(field_len)<<bit);
+//         current_val |= (val<<bit);
+//         status = __STREXW(current_val, addr);
+//     }while(status != 0);
+// }
 
 __INLINE void rwm32_hw(volatile uint32_t* addr, 
 uint32_t bit, uint32_t field_len, uint32_t val){
@@ -101,6 +101,11 @@ typedef enum GPIO_port{
     GPIO_PORT_NONE
 }GPIO_port_t;
 
+typedef enum I2C_instance{
+    I2C_1 = 0,
+    I2C_2 = 1,
+    I2C_3 = 2
+}I2C_instance_t;
 /**
 added from stm32407.h 
 link:

@@ -1,19 +1,21 @@
 #ifndef ARM_H
 #define ARM_H
 
+#include "stdint.h"
+
 // https://github.com/ARM-software/CMSIS_4/blob/master/CMSIS/Include/cmsis_gcc.h
 
-__attribute__( ( always_inline ) ) static inline void __enable_irq(void)
+__attribute__( ( always_inline ) ) inline void __enable_irq(void)
 {
   __asm volatile ("cpsie i" : : : "memory");
 }
 
-__attribute__( ( always_inline ) ) static inline void __disable_irq(void)
+__attribute__( ( always_inline ) ) inline void __disable_irq(void)
 {
   __asm volatile ("cpsid i" : : : "memory");
 }
 
-__attribute__( ( always_inline ) ) static inline uint32_t __get_PRIMASK(void)
+__attribute__( ( always_inline ) ) inline uint32_t __get_PRIMASK(void)
 {
   uint32_t result;
 
@@ -21,37 +23,37 @@ __attribute__( ( always_inline ) ) static inline uint32_t __get_PRIMASK(void)
   return(result);
 }
 
-__attribute__( ( always_inline ) ) static inline void __set_PRIMASK(uint32_t priMask)
+__attribute__( ( always_inline ) ) inline void __set_PRIMASK(uint32_t priMask)
 {
   __asm volatile ("MSR primask, %0" : : "r" (priMask) : "memory");
 }
 
-__attribute__((always_inline)) static inline void __WFI(void)
+__attribute__((always_inline)) inline void __WFI(void)
 {
   __asm volatile ("wfi");
 }
 
-__attribute__((always_inline)) static inline void __WFE(void)
+__attribute__((always_inline)) inline void __WFE(void)
 {
   __asm volatile ("wfe");
 }
 
-__attribute__((always_inline)) static inline void __ISB(void)
+__attribute__((always_inline)) inline void __ISB(void)
 {
   __asm volatile ("isb 0xF":::"memory");
 }
 
-__attribute__((always_inline)) static inline void __DSB(void)
+__attribute__((always_inline)) inline void __DSB(void)
 {
   __asm volatile ("dsb 0xF":::"memory");
 }
 
-__attribute__((always_inline)) static inline void __DMB(void)
+__attribute__((always_inline)) inline void __DMB(void)
 {
   __asm volatile ("dmb 0xF":::"memory");
 }
 
-__attribute__((always_inline)) static inline int32_t __LDREXW(volatile uint32_t *addr)
+__attribute__((always_inline)) inline int32_t __LDREXW(volatile uint32_t *addr)
 {
     uint32_t result;
 
@@ -59,7 +61,7 @@ __attribute__((always_inline)) static inline int32_t __LDREXW(volatile uint32_t 
    return(result);
 }
 
-__attribute__((always_inline)) static inline uint32_t __STREXW(uint32_t value, volatile uint32_t *addr)
+__attribute__((always_inline)) inline uint32_t __STREXW(uint32_t value, volatile uint32_t *addr)
 {
    uint32_t result;
 

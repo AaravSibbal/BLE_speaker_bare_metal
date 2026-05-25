@@ -24,7 +24,7 @@ void SYSCFG_enable_EXTI(SYSCFG_t* self, GPIO_port_t port, uint8_t pin){
     uint32_t EXTI_idx = (pin/4);
     uint32_t EXTI_bit = ((pin % 4) * 4);
     uint32_t primask = __get_PRIMASK();
-    __disable_irq()
+    __disable_irq();
     self->EXTICR[EXTI_idx] &= ~(EXTICR1_BIT_MSK<<EXTI_bit);
     self->EXTICR[EXTI_idx] |= (port<<EXTI_bit);
     __set_PRIMASK(primask);
