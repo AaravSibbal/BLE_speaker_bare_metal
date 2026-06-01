@@ -2,9 +2,7 @@
 
 #include "../../peripherals/I2C/I2C.h"
 #include "../../assert.h"
-#include "Src/arm/arm.h"
-#include "Src/assert.h"
-#include "Src/def.h"
+#include "../../arm/arm.h"
 
 
 struct queue{
@@ -70,6 +68,7 @@ __bool queue_enqueue(queue_t* self, uint8_t data){
 __bool queue_dequeue(queue_t* self, uint8_t* out_data){
     BARE_ASSERT(self != NULL);
     if(queue_is_empty(self)){
+        out_data = NULL;
         return FALSE;
     }
     *out_data = self->buffer[self->tail]; 

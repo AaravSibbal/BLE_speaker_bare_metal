@@ -1,15 +1,6 @@
 #include "I2C.h"
-#include "I2C.H"
 
 #include "../../assert.h"
-#include "Src/arm/arm.h"
-#include "Src/assert.h"
-#include "Src/def.h"
-#include "Src/peripherals/gpio/gpio.h"
-#include "Src/peripherals/rcc/rcc.h"
-#include "Src/services/interrupts/interrupt.h"
-#include <stdint.h>
-#include "../../data_structure/queue/queue.h"
 
 #define I2C1 (0x40005400)
 #define I2C2 (0x40005800)
@@ -17,81 +8,38 @@
 #define MHZ_TO_HZ_MULTIPLIER (1000000)
 #define I2C_STANDARD_FREQ (100000)
 
-static I2C_t i2c_static_pool[3];
+I2C_t i2c1;
+I2C_t i2c2;
+I2C_t i2c3;
 
 static const GPIO_AFx_t I2C_GPIO_ALT_FUNC_MAPPING = AF4;
 static const GPIO_MODER_t I2C_GPIO_MODE = GPIO_MODE_ALT;
 static const GPIO_OTYPER_t I2C_GPIO_TYPE = GPIO_TYPE_OPEN_DRAIN;
 static const GPIO_PUPDR_t I2C_GPIO_PUPDR_VAL = PULL_UP;
 
+
+
 static I2C_t* I2C_get_instance(const I2C_instance_t instance){
     I2C_t* i2c;
     switch(instance){
         case I2C_1:
-            i2c = &i2c_static_pool[I2C_1];
+            i2c = &i2c1;
             i2c->driver = ((I2C_driver_t *) (I2C1));
             return i2c;
             break;
         case I2C_2:
-            i2c = &i2c_static_pool[I2C_2];
+            i2c = &i2c2;
             i2c->driver = ((I2C_driver_t *) (I2C2));
             return i2c;
             break;
         case I2C_3:
-            i2c = &i2c_static_pool[I2C_3];
+            i2c = &i2c3;
             i2c->driver = ((I2C_driver_t *) (I2C3));
             return i2c;
             break;
         default:
             return NULL;
     } 
-}
-
-#define SWRST_BIT 15
-
-__STATIC_INLINE void I2C_en_reset(I2C_driver_t* driver){
-    BARE_ASSERT(driver != NULL);
-    volatile uint32_t addr = (uint32_t)&driver->CR1;
-    bit_band_write(addr, SWRST_BIT, 1);
-    (void)driver->CR2; // dummy read
-    bit_band_write(addr, SWRST_BIT, 0);
-    (void)driver->CR2; // dummy read
-}
-
-#define ITEVTEN_BIT 9
-
-// DM00031020: 27.6.2: Bit 9 ITEVTEN 
-__STATIC_INLINE void I2C_en_interrupts(I2C_driver_t* driver){
-    BARE_ASSERT(driver != NULL);
-    volatile uint32_t addr = (uint32_t)&driver->CR2;
-    bit_band_write(addr, ITEVTEN_BIT, 1);
-}
-
-
-#define ITERREN_BIT 8UL
-
-// DM00031020: 27.6.2: Bit 8 ITERREN 
-__STATIC_INLINE void I2C_en_errors(I2C_driver_t* driver){
-    BARE_ASSERT(driver != NULL);
-    uint32_t addr = (uint32_t)&driver->CR2;
-    bit_band_write(addr, ITERREN_BIT, 1);
-}
-
-#define ITBUFFEN_BIT 10UL
-
-__STATIC_INLINE void I2C_en_buffer(I2C_driver_t* driver){
-    BARE_ASSERT(driver != NULL);
-    uint32_t addr = (uint32_t)&driver->CR2;
-    bit_band_write(addr, ITBUFFEN_BIT, 1);
-}
-
-
-#define ACK_BIT 10
-
-__STATIC_INLINE void I2C_en_ack(I2C_driver_t* driver){
-    BARE_ASSERT(driver != NULL);
-    uint32_t addr = (uint32_t)&driver->CR1;
-    bit_band_write(addr, ACK_BIT, 1);
 }
 
 __STATIC_INLINE void I2C_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin){
@@ -101,63 +49,6 @@ __STATIC_INLINE void I2C_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin){
     GPIO_set_pupdr(gpio, pin, I2C_GPIO_PUPDR_VAL);
 }
 
-static uint32_t I2C_get_freq(I2C_mode_t mode){
-	if(mode != I2C_MODE_STANDARD){
-		return 0;
-	}
-	return ((uint32_t)I2C_STANDARD_FREQ);
-}
-
-/**
-27.6.2 I2C Control register 2 (I2C_CR2)
-Bits 5:0 FREQ[5:0]: Peripheral clock frequency
-*/
-
-#define I2C_FREQ_BIT 0UL
-#define I2C_FREQ_FIELD_LEN 6UL
-
-__STATIC_INLINE void I2C_set_freq_bits(I2C_driver_t* driver, uint32_t clock_spd_Mhz){
-    rwm32_hw(
-        &driver->CR2,
-        I2C_FREQ_BIT,
-        I2C_FREQ_FIELD_LEN,
-        clock_spd_Mhz
-    );
-}
-
-#define I2C_CCR_BIT 0UL
-#define I2C_CCR_FLIED_LEN 12UL
-
-__STATIC_INLINE void I2C_set_ccr(I2C_driver_t* driver, uint32_t ccr_val){
-    rwm32_hw(
-        &driver->CCR,
-        I2C_CCR_BIT, 
-        I2C_CCR_FLIED_LEN, 
-        ccr_val
-    );
-}
-
-#define I2C_TRISE_BIT 0
-#define I2C_TRISE_FIELD_LEN 6
-
-__STATIC_INLINE void I2C_set_trise(I2C_driver_t* driver, uint32_t trise_val){
-    // sanitizing the data
-    trise_val &= (msk_of_ones(I2C_TRISE_FIELD_LEN));
-    rwm32_hw(
-        &driver->TRISE,
-        I2C_TRISE_BIT,
-        I2C_TRISE_FIELD_LEN, 
-        trise_val
-    );
-}
-
-#define I2C_PERIPHERAL_EN_BIT 0
-
-__STATIC_INLINE void I2C_en_peripheral(I2C_driver_t* driver){
-    BARE_ASSERT(driver != NULL);
-    uint32_t addr = (uint32_t)&driver->CR1;
-    bit_band_write(addr, I2C_PERIPHERAL_EN_BIT, 1);
-}
 
 __STATIC_INLINE void I2C_en_clock(I2C_instance_t instance, RCC_t* rcc){
     switch (instance) {
@@ -176,10 +67,10 @@ __STATIC_INLINE void I2C_en_clock(I2C_instance_t instance, RCC_t* rcc){
     return;
 }
 
+
 I2C_t* I2C_init(I2C_instance_t instance, I2C_mode_t mode, 
 GPIO_port_t sda_port, GPIO_Pin_t sda_pin, GPIO_port_t scl_port, 
-GPIO_Pin_t scl_pin, uint32_t clock_speed_Mhz, RCC_t* rcc,
-queue_cap_t capacity, uint8_t* buffer){
+GPIO_Pin_t scl_pin, uint32_t clock_speed_Mhz, RCC_t* rcc){
 	if(mode != I2C_MODE_STANDARD){
 		// fast mode not implemented yet
 		// the rest of the function doesn't care about this fact
@@ -216,31 +107,5 @@ queue_cap_t capacity, uint8_t* buffer){
 
 
     I2C_en_peripheral(i2c->driver);
-    i2c->queue = queue_init(buffer, capacity, instance);
-
-}
-
-#define ADDR_BIT 1UL
-#define ADDR_BIT_MSK (1UL<<ADDR_BIT)
-
-#define TxE_BIT 7UL
-#define TxE_BIT_MSK (1UL<<TxE_BIT)
-
-void I2C1_EV_IRQHandler(){
-    clear_pending_IRQ(I2C1_EV_IRQn);
-    
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-    
-    I2C_driver_t* driver = (I2C_driver_t*)(I2C1);
-
-    if(driver->SR1 & ADDR_BIT_MSK){
-        // address for the slave matched
-        uint32_t dummy_read = driver->SR1;
-        dummy_read = driver->SR2;
-    }
-    if(driver->SR1 & TxE_BIT_MSK)
-
-    __set_PRIMASK(primask);
-    __DSB();
+    return i2c;
 }

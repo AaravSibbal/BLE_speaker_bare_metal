@@ -32,7 +32,6 @@ const GPIO_Pin_t pin, const uint32_t num_bits){
 #define MODER_ACCESS_BITS 2UL
 
 void GPIO_set_moder(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_MODER_t mode){
-    BARE_ASSERT(self != NULL);
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
     self->MODER &= ~(GPIO_get_msk(pin, MODER_ACCESS_BITS));
@@ -43,7 +42,6 @@ void GPIO_set_moder(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_MODER_t mode)
 #define OTYPER_ACCESS_BITS 1UL
 
 void GPIO_set_otyper(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_OTYPER_t type){
-    BARE_ASSERT(self != NULL);
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
     self->OTYPER &= ~(GPIO_get_msk(pin, OTYPER_ACCESS_BITS));
@@ -59,7 +57,6 @@ void GPIO_set_otyper(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_OTYPER_t typ
 
 __STATIC_INLINE void GPIO_set_bsrr(
     GPIO_t* self, const GPIO_Pin_t pin, const GPIO_ODR_t val){
-    BARE_ASSERT(self != NULL);
     if(val == GPIO_OUTPUT_HIGH){
         self->BSRR = (1UL<<pin);
     }else{
@@ -76,7 +73,6 @@ void GPIO_set_odr(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_ODR_t output){
 
 void GPIO_set_alt_func(
     GPIO_t* self, const GPIO_Pin_t pin, const GPIO_AFx_t function){
-    BARE_ASSERT(self != NULL);
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
     uint32_t temp_pin = pin;
@@ -98,7 +94,6 @@ void GPIO_set_alt_func(
 #define PUPDR_ACCESS_BITS 2UL
 
 void GPIO_set_pupdr(GPIO_t *self, const GPIO_Pin_t pin, const GPIO_PUPDR_t val){
-    BARE_ASSERT(self != NULL);
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
     self->PUPDR &= ~(GPIO_get_msk(pin, PUPDR_ACCESS_BITS));
