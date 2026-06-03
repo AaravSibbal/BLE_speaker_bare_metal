@@ -142,10 +142,25 @@ __INLINE void I2C_write_to_DR(I2C_driver_t* driver, uint8_t payload){
     driver->DR = (uint32_t)payload;
 }
 
+
+uint8_t I2C_get_DR_val(I2C_driver_t* driver){
+    return (uint8_t)driver->DR;
+}
+
 __INLINE uint32_t I2C_get_SR1(I2C_driver_t* driver){
     return driver->SR1
 }
 
 __INLINE uint32_t I2C_get_SR2(I2C_driver_t* driver){
     return driver->SR2;
+}
+
+#define I2C_CR1_POS_BIT 11UL
+
+__INLINE void I2C_en_POS(I2C_driver_t* driver){
+    bit_band_write(((uint32_t)&driver->CR1), I2C_CR1_POS_BIT, 1);
+}
+
+__INLINE void I2C_dis_POS(I2C_driver_t* driver){
+    bit_band_write(((uint32_t)&driver->CR1), I2C_CR1_POS_BIT, 0);
 }

@@ -89,6 +89,7 @@ void I2C_read(I2C_handle_t* self, uint16_t transfer_size){
 	self->transfer_size = transfer_size
 	self->direction = I2C_DIR_READ;
 	self->state = I2C_STATE_SB_SENT;
+	self->rx_count = 0;
 	I2C_start_gen(self->i2c_device->driver);
 }
 
@@ -104,12 +105,16 @@ void I2C_read(I2C_handle_t* self, uint16_t transfer_size){
 #define START_BIT 0UL
 #define START_BIT_MSK (1UL<<START_BIT)
 
+#define RxNE_BIT 6UL
+#define RxNE_BIT_MSK (1UL<<RxNE_BIT)
+
 void I2C1_EV_IRQHandler(){
     BARE_ASSERT(i2c1_handle.rx_queue != NULL);
     BARE_ASSERT(i2c1_handle.tx_queue != NULL);
     BARE_ASSERT(i2c1_handle.i2c_device != NULL);
     BARE_ASSERT(i2c1_handle.i2c_device->driver != NULL);
     
+	uint32_t dummy_read;
     uint32_t i2c_sr1 = I2C_get_SR1(i2c1_handle.i2c_device->driver);
     uint32_t i2c_sr2;
     if(i2c_sr1 & START_BIT_MSK){
@@ -131,34 +136,102 @@ void I2C1_EV_IRQHandler(){
                     i2c1_handle.error_code = I2C_ERR_DIRECTION_VAL;
             }
             i2c1_handle.state = I2C_STATE_SLAVE_ADDR_SENT;
-            __DSB();
-            return;
         }
     }
 
     if(i2c1_handle.direction == I2C_DIR_READ){
         if(i2c_sr1 & ADDR_BIT_MSK){
-            if(i2c1_handle.rx_queue->capacity == QUEUE_CAP_1){
+            if(i2c1_handle.transfer_size == 1){
                 // disable ack bit before clearing addr
                 I2C_dis_ack(i2c1_handle.i2c_device->driver);
                 // clear addr
+				dummy_read = I2C_get_SR1(i2c1_handle.i2c_device->driver);
                 i2c_sr2 = I2C_get_SR2(i2c1_handle.i2c_device->driver);
                 // generate stop
                 I2C_stop_gen(i2c1_handle.i2c_device->driver);
             }
-            else{
+            else if(i2c1_handle.transfer_size == 2){
+				I2C_dis_ack(i2c1_handle.i2c_device->driver);
+				I2C_en_POS(i2c1_handle.i2c_device->driver);
+                dummy_read = I2C_get_SR1(i2c1_handle.i2c_device->driver);
                 i2c_sr2 = I2C_get_SR2(i2c1_handle.i2c_device->driver);
+				// we have now cleared addr
             }
-
+			else{
+                dummy_read = I2C_get_SR1(i2c1_handle.i2c_device->driver);
+                i2c_sr2 = I2C_get_SR2(i2c1_handle.i2c_device->driver);
+			}
             i2c1_handle.state = I2C_STATE_BUSY;
-            __DSB();
-            return;
         }
-        // TODO: REST OF THE READ HERE
-        // else if()
+        else if(i2c_sr1 & BTF_BIT_MSK){
+			if(i2c1_handle.transfer_size == 2){
+				I2C_stop_gen(i2c1_handle.i2c_device->driver);
+				queue_enqueue(
+					i2c1_handle.rx_queue,
+					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+				);
+				queue_enqueue(
+					i2c1_handle.rx_queue,
+					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+				);
+				// reset everything and move on;
+				I2C_dis_POS(i2c1_handle.i2c_device->driver);
+				I2C_en_ack(i2c1_handle.i2c_device->driver);
+				i2c1_handle.state = I2C_STATE_DONE;
+			}
+			else if(
+				((i2c1_handle.transfer_size - i2c1_handle.rx_count) == 3)
+				&& (i2c1_handle.transfer_size > 2)
+			)
+			{
+				I2C_dis_ack(i2c1_handle.i2c_device->driver);
+				queue_enqueue(
+					i2c1_handle.rx_queue, 
+					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+				);
+				i2c1_handle.rx_count++;
+			}
+			else if(
+				((i2c1_handle.transfer_size - i2c1_handle.rx_count) == 2)
+				&& (i2c1_handle.transfer_size > 2)
+			)
+			{
+				I2C_stop_gen(i2c1_handle.i2c_device->driver);
+				I2C_en_ack(i2c1_handle.i2c_device->driver);
+				i2c1_handle.state = I2C_STATE_DONE;
+				queue_enqueue(
+					i2c1_handle.rx_queue, 
+					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+				);
+				queue_enqueue(
+					i2c1_handle.rx_queue, 
+					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+				);
+			}
+		}
+		else if(i2c_sr1 & RxNE_BIT_MSK){
+			if(i2c1_handle.transfer_size == 1){
+				queue_enqueue(
+					i2c1_handle.rx_queue,
+					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+				);
+				I2C_en_ack(i2c1_handle.i2c_device->driver);
+				i2c1_handle.state = I2C_STATE_DONE;
+			}
+			else if(i2c1_handle.transfer_size > 2){
+				if(i2c1_handle.transfer_size - i2c1_handle.rx_count > 3){
+					queue_enqueue(
+						i2c1_handle.rx_queue,
+						I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+					);
+					i2c1_handle.rx_count++;
+				}
+			}
+		}
     }
     else if(i2c1_handle.direction == I2C_DIR_WRITE){
         // already clears the addr if it is active
+		dummy_read = I2C_get_SR1(i2c1_handle.i2c_device->driver);
         i2c_sr2 = I2C_get_SR2(i2c1_handle.i2c_device->driver);
         uint8_t payload;
 		if(i2c_sr1 & TxE_BIT_MSK){
@@ -180,6 +253,6 @@ void I2C1_EV_IRQHandler(){
 				I2C_write_to_DR(i2c1_handle.i2c_device->driver, payload);
 			}
 		}
-        __DSB();
     }
+	__DSB();
 }
