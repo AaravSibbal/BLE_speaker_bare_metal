@@ -3,7 +3,7 @@
 #include "../../peripherals/I2C/I2C.h"
 #include "../../arm/arm.h"
 
-void queue_init(queue_t* self, uint8_t* buffer, queue_cap_t capacity){
+queue_t* queue_init(queue_t* self, uint8_t* buffer, queue_cap_t capacity){
     if(buffer == NULL){
         return NULL;
     }
@@ -12,6 +12,7 @@ void queue_init(queue_t* self, uint8_t* buffer, queue_cap_t capacity){
     self->buffer = buffer;
     self->head = 0;
     self->tail = 0;
+    return self;
 }
 
 __bool queue_is_empty(queue_t* self){
@@ -28,13 +29,13 @@ __bool queue_enqueue(queue_t* self, uint8_t data){
 
     self->buffer[self->head & (self->capacity - 1)] = data;
     __DMB();
-    self->head++
+    self->head++;
     return TRUE;
 }
 
 __bool queue_dequeue(queue_t* self, uint8_t* out_data){
     if(queue_is_empty(self)){
-        *out_data = NULL;
+        out_data = NULL;
         return FALSE;
     }
     *out_data = self->buffer[self->tail & (self->capacity - 1)]; 

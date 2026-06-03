@@ -6,7 +6,6 @@
 #define I2C2 (0x40005800)
 #define I2C3 (0x40005400)
 #define MHZ_TO_HZ_MULTIPLIER (1000000)
-#define I2C_STANDARD_FREQ (100000)
 
 I2C_t i2c1;
 I2C_t i2c2;
@@ -19,7 +18,7 @@ static const GPIO_PUPDR_t I2C_GPIO_PUPDR_VAL = PULL_UP;
 
 
 
-static I2C_t* I2C_get_instance(const I2C_instance_t instance){
+I2C_t* I2C_get_instance(const I2C_instance_t instance){
     I2C_t* i2c;
     switch(instance){
         case I2C_1:

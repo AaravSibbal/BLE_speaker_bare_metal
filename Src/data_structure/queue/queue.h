@@ -20,7 +20,7 @@ typedef enum{
 }queue_cap_t;
 
 
-void queue_init(queue_t* self, uint8_t* buffer, queue_cap_t capacity);
+queue_t* queue_init(queue_t* self, uint8_t* buffer, queue_cap_t capacity);
 __bool queue_is_empty(queue_t* self);
 __bool queue_enqueue(queue_t* self, uint8_t data);
 __bool queue_dequeue(queue_t* self, uint8_t* out_data);

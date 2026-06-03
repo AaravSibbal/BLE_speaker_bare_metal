@@ -67,6 +67,8 @@ __INLINE void I2C_dis_ack(I2C_driver_t* driver){
 	bit_band_write(addr, ACK_BIT, 0);
 }
 
+#define I2C_STANDARD_FREQ (100000)
+
 uint32_t I2C_get_freq(I2C_mode_t mode){
 	if(mode != I2C_MODE_STANDARD){
 		return 0;
@@ -148,7 +150,7 @@ uint8_t I2C_get_DR_val(I2C_driver_t* driver){
 }
 
 __INLINE uint32_t I2C_get_SR1(I2C_driver_t* driver){
-    return driver->SR1
+    return driver->SR1;
 }
 
 __INLINE uint32_t I2C_get_SR2(I2C_driver_t* driver){

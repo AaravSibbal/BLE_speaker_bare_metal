@@ -6,7 +6,7 @@
     "configurations": [
         {
             "cwd": "${workspaceFolder}",
-            "executable": "./build/Debug/blinky_inturrupt.elf",
+            "executable": "./build/Debug/BLE_speaker_bare_metal.elf",
             "name": "Debug with ST-Link",
             "request": "launch",
             "type": "cortex-debug",

@@ -21,7 +21,7 @@
 #
 
 # Core project settings
-project("blinky_inturrupt")
+project("BLE_speaker_bare_metal")
 enable_language(C CXX ASM)
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
@@ -49,10 +49,10 @@ set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/print/printf.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/exti/exti.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/gpio/gpio.c   
-	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/I2C/I2C.c 
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/i2c/i2c.c 
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/i2c/i2c_driver.c 
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/i2c/i2c_handle.c 
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/data_structure/queue/queue.c 
-
-
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/nvic/nvic.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/rcc/rcc.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/scb/scb.c   

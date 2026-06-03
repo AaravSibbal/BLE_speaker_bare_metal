@@ -14,9 +14,9 @@ static I2C_handle_t i2c3_handle;
 static queue_t i2c1_rx_queue;
 static queue_t i2c1_tx_queue;
 static queue_t i2c2_tx_queue;
-static queue_t i2c2_tx_queue;
+static queue_t i2c2_rx_queue;
 static queue_t i2c3_tx_queue;
-static queue_t i2c3_tx_queue;
+static queue_t i2c3_rx_queue;
 
 static void I2C_init_queues(I2C_handle_t* handle, uint8_t *rx_buffer, 
 uint8_t* tx_buffer, queue_cap_t capacity, I2C_instance_t instance){
@@ -86,7 +86,7 @@ void I2C_write(I2C_handle_t* self){
 
 void I2C_read(I2C_handle_t* self, uint16_t transfer_size){
 	I2C_en_ack(self->i2c_device->driver);
-	self->transfer_size = transfer_size
+	self->transfer_size = transfer_size;
 	self->direction = I2C_DIR_READ;
 	self->state = I2C_STATE_SB_SENT;
 	self->rx_count = 0;
