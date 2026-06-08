@@ -126,6 +126,11 @@ __INLINE void I2C_en_peripheral(I2C_driver_t* driver){
     bit_band_write(addr, I2C_PERIPHERAL_EN_BIT, 1);
 }
 
+__INLINE void I2C_dis_peripheral(I2C_driver_t* driver){
+    uint32_t addr = (uint32_t)&driver->CR1;
+    bit_band_write(addr, I2C_PERIPHERAL_EN_BIT, 0);
+}
+
 #define CR1_START_BIT 8UL
 
 __INLINE void I2C_start_gen(I2C_driver_t* driver){
@@ -165,4 +170,10 @@ __INLINE void I2C_en_POS(I2C_driver_t* driver){
 
 __INLINE void I2C_dis_POS(I2C_driver_t* driver){
     bit_band_write(((uint32_t)&driver->CR1), I2C_CR1_POS_BIT, 0);
+}
+
+#define I2C_SR1_AF_BIT 10UL
+void I2C_clear_AF(I2C_driver_t* driver){
+    bit_band_write((uint32_t)&driver->SR1, I2C_SR1_AF_BIT, 0);
+    (void)driver->SR1;
 }

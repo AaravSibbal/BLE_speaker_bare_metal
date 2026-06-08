@@ -85,7 +85,7 @@ void GPIO_set_alt_func(
     self->AFR[AFR_idx] &= ~(GPIO_get_msk(temp_pin, ALT_ACCESS_BITS));
     self->AFR[AFR_idx] |= GPIO_get_set_msk(
         function,
-        pin, 
+        temp_pin, 
         ALT_ACCESS_BITS);
     __set_PRIMASK(primask);
 }
@@ -114,4 +114,8 @@ __STATIC_INLINE GPIO_t* GPIO_get_instance(const GPIO_port_t port){
 uint32_t GPIO_get_IDR_G(const GPIO_port_t port, const GPIO_Pin_t pin){
     GPIO_t* driver = GPIO_get_instance(port);
     return (0x01UL & (driver->IDR >> pin));
+}
+
+uint32_t GPIO_get_IDR(GPIO_t* self, GPIO_Pin_t pin){
+    return (0x01UL & (self->IDR >> pin));
 }

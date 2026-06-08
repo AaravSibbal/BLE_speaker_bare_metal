@@ -68,7 +68,9 @@ __attribute__((always_inline)) inline uint32_t __STREXW(uint32_t value, volatile
    __asm volatile ("strex %0, %2, %1" : "=&r" (result), "=Q" (*addr) : "r" (value) );
    return(result);
 }
-
-#define __BKPT(value) (__asm volatile ("bkpt "#value))
+#define __BKPT(value)                       __asm volatile ("bkpt "#value)
+// __attribute__((always_inline)) inline void __BKPT(uint8_t value){
+//     __asm volatile ("bkpt %0" : : "i" (value));
+// }
 
 #endif

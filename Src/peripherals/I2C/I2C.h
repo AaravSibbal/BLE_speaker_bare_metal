@@ -5,6 +5,7 @@
 #include "../../def.h"
 #include "../gpio/gpio.h"
 #include "../rcc/rcc.h"
+#include "Src/peripherals/gpio/gpio.h"
 #include "i2c_driver.h"
 
 
@@ -16,6 +17,10 @@ typedef struct I2C{
     GPIO_Pin_t sda_pin;
 }I2C_t;
 
+extern const GPIO_port_t i2c1_sda_gpio_port;
+extern const GPIO_port_t i2c1_scl_gpio_port;
+extern const GPIO_Pin_t i2c1_scl_gpio_pin;
+extern const GPIO_Pin_t i2c1_sda_gpio_pin;
 
 I2C_t* I2C_init(I2C_instance_t instance, I2C_mode_t mode, 
     GPIO_port_t sda_port, GPIO_Pin_t sda_pin, GPIO_port_t scl_port, 

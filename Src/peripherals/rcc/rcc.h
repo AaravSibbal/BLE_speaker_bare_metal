@@ -13,6 +13,7 @@ void RCC_dis_SYSCFG(RCC_t* self);
 void RCC_en_I2C1(RCC_t* self);
 void RCC_en_I2C2(RCC_t* self);
 void RCC_en_I2C3(RCC_t* self);
+void RCC_reset_I2C1(RCC_t* self);
 
 
 // #define CCR_OFFSET (0x00)

@@ -20,7 +20,8 @@ typedef enum I2C_state_machine{
 
 typedef enum{
     I2C_ERR_NONE = 0,
-    I2C_ERR_DIRECTION_VAL
+    I2C_ERR_DIRECTION_VAL,
+    I2C_ERR_AF
 }I2C_error_t;
 
 typedef struct{
@@ -33,13 +34,22 @@ typedef struct{
     volatile uint16_t transfer_size;
     volatile uint16_t rx_count;
     uint8_t peripheral_write_addr;
+    void (*transfer_complete_cb)(void);
 }I2C_handle_t;
 
 I2C_handle_t* I2C_handle_init(
-I2C_t* i2c_device, I2C_instance_t i2c_instance,queue_cap_t capacity, 
-uint8_t* rx_buffer, uint8_t* tx_buffer, uint8_t peripheral_write_addr);
+I2C_t* i2c_device, I2C_instance_t i2c_instance, queue_t* rx_queue,
+queue_t* tx_queue, uint8_t peripheral_write_addr, void (*transfer_complete_cb)(void));
+
 
 void I2C_write(I2C_handle_t* self);
 void I2C_read(I2C_handle_t* self, uint16_t transfer_size);
 
+void I2C1_EV_IRQHandler(void);
+void I2C2_EV_IRQHandler(void);
+void I2C3_EV_IRQHandler(void);
+
+void I2C1_ER_IRQHandler(void);
+void I2C2_ER_IRQHandler(void);
+void I2C3_ER_IRQHandler(void);
 #endif

@@ -1,46 +1,17 @@
 #include "i2c_handle.h"
-#include "Src/arm/arm.h"
-#include "Src/assert.h"
-#include "Src/data_structure/queue/queue.h"
-#include "Src/def.h"
-#include "i2c_driver.h"
 #include "../../arm/arm.h"
-#include <stdint.h>
+#include "../../assert.h"
+#include "Src/peripherals/gpio/gpio.h"
+#include "Src/peripherals/i2c/i2c_driver.h"
 
 static I2C_handle_t i2c1_handle;
 static I2C_handle_t i2c2_handle;
 static I2C_handle_t i2c3_handle;
 
-static queue_t i2c1_rx_queue;
-static queue_t i2c1_tx_queue;
-static queue_t i2c2_tx_queue;
-static queue_t i2c2_rx_queue;
-static queue_t i2c3_tx_queue;
-static queue_t i2c3_rx_queue;
-
-static void I2C_init_queues(I2C_handle_t* handle, uint8_t *rx_buffer, 
-uint8_t* tx_buffer, queue_cap_t capacity, I2C_instance_t instance){
-    switch (instance) {
-        case I2C_1:
-            handle->rx_queue = queue_init(&i2c1_rx_queue, rx_buffer, capacity);
-            handle->tx_queue = queue_init(&i2c1_tx_queue, tx_buffer, capacity);
-            break;
-        case I2C_2:
-            handle->rx_queue = queue_init(&i2c2_rx_queue, rx_buffer, capacity);
-            handle->tx_queue = queue_init(&i2c2_tx_queue, tx_buffer, capacity);
-            break;
-        case I2C_3:
-            handle->rx_queue = queue_init(&i2c3_rx_queue, rx_buffer, capacity);
-            handle->tx_queue = queue_init(&i2c3_tx_queue, tx_buffer, capacity);
-            break;
-        default:
-            return;
-    }
-}
-
 I2C_handle_t* I2C_handle_init(
-I2C_t* i2c_device, I2C_instance_t i2c_instance, queue_cap_t capacity,
-uint8_t* rx_buffer, uint8_t* tx_buffer, uint8_t peripheral_write_addr)
+I2C_t* i2c_device, I2C_instance_t i2c_instance, queue_t* rx_queue,
+queue_t* tx_queue ,uint8_t peripheral_write_addr, 
+void (*transfer_complete_cb)(void))
 {
     I2C_handle_t* i2c_handle;
     switch (i2c_instance) {
@@ -60,24 +31,29 @@ uint8_t* rx_buffer, uint8_t* tx_buffer, uint8_t peripheral_write_addr)
         return i2c_handle;
     }
 
-    I2C_init_queues(
-        i2c_handle,
-        rx_buffer, 
-        tx_buffer, 
-        capacity, 
-        i2c_instance
-    );
+    BARE_ASSERT(rx_queue != NULL);
+    BARE_ASSERT(tx_queue != NULL);
 
-    BARE_ASSERT(i2c_handle->rx_queue != NULL);
-    BARE_ASSERT(i2c_handle->tx_queue != NULL);
+	i2c_handle->rx_queue = rx_queue;
+	i2c_handle->tx_queue = tx_queue;
     i2c_handle->i2c_device = I2C_get_instance(i2c_instance);
     i2c_handle->peripheral_write_addr = peripheral_write_addr;
     i2c_handle->error_code = I2C_ERR_NONE;
 	i2c_handle->transfer_size = 0;
+	i2c_handle->transfer_complete_cb = transfer_complete_cb;
     return i2c_handle;
 }
 
+
 void I2C_write(I2C_handle_t* self){
+    BARE_ASSERT(self->rx_queue != NULL);
+    BARE_ASSERT(self->tx_queue != NULL);
+    BARE_ASSERT(self->i2c_device != NULL);
+    BARE_ASSERT(self->i2c_device->driver != NULL);
+	BARE_ASSERT(queue_is_empty(self->tx_queue) == FALSE);
+
+	// i2c_bus
+
 	I2C_en_buffer(self->i2c_device->driver);
 	self->direction = I2C_DIR_WRITE;
     self->state = I2C_STATE_SB_SENT;
@@ -85,7 +61,14 @@ void I2C_write(I2C_handle_t* self){
 }
 
 void I2C_read(I2C_handle_t* self, uint16_t transfer_size){
+    BARE_ASSERT(self->rx_queue != NULL);
+    BARE_ASSERT(self->tx_queue != NULL);
+    BARE_ASSERT(self->i2c_device != NULL);
+    BARE_ASSERT(self->i2c_device->driver != NULL);
+	// BARE_ASSERT(queue_is_empty(self->tx_queue) == FALSE);
+
 	I2C_en_ack(self->i2c_device->driver);
+	I2C_en_buffer(self->i2c_device->driver);
 	self->transfer_size = transfer_size;
 	self->direction = I2C_DIR_READ;
 	self->state = I2C_STATE_SB_SENT;
@@ -108,131 +91,145 @@ void I2C_read(I2C_handle_t* self, uint16_t transfer_size){
 #define RxNE_BIT 6UL
 #define RxNE_BIT_MSK (1UL<<RxNE_BIT)
 
-void I2C1_EV_IRQHandler(){
-    BARE_ASSERT(i2c1_handle.rx_queue != NULL);
-    BARE_ASSERT(i2c1_handle.tx_queue != NULL);
-    BARE_ASSERT(i2c1_handle.i2c_device != NULL);
-    BARE_ASSERT(i2c1_handle.i2c_device->driver != NULL);
-    
+
+__STATIC_INLINE void I2C_ev_handler(I2C_handle_t* i2c_handle){
+
 	uint32_t dummy_read;
-    uint32_t i2c_sr1 = I2C_get_SR1(i2c1_handle.i2c_device->driver);
+    uint32_t i2c_sr1 = I2C_get_SR1(i2c_handle->i2c_device->driver);
     uint32_t i2c_sr2;
     if(i2c_sr1 & START_BIT_MSK){
-        if(i2c1_handle.state == I2C_STATE_SB_SENT){
-            switch(i2c1_handle.direction){
+        if(i2c_handle->state == I2C_STATE_SB_SENT){
+            switch(i2c_handle->direction){
                 case I2C_DIR_READ:
                     I2C_write_to_DR(
-                        i2c1_handle.i2c_device->driver,
-                        i2c1_handle.peripheral_write_addr | 1
+                        i2c_handle->i2c_device->driver,
+                        i2c_handle->peripheral_write_addr + 1
                     );
                     break;
                 case I2C_DIR_WRITE:
                     I2C_write_to_DR(
-                        i2c1_handle.i2c_device->driver,
-                        i2c1_handle.peripheral_write_addr
+                        i2c_handle->i2c_device->driver,
+                        i2c_handle->peripheral_write_addr
                     );
                     break;
                 default:
-                    i2c1_handle.error_code = I2C_ERR_DIRECTION_VAL;
+                    i2c_handle->error_code = I2C_ERR_DIRECTION_VAL;
             }
-            i2c1_handle.state = I2C_STATE_SLAVE_ADDR_SENT;
+            i2c_handle->state = I2C_STATE_SLAVE_ADDR_SENT;
         }
     }
 
-    if(i2c1_handle.direction == I2C_DIR_READ){
+    if(i2c_handle->direction == I2C_DIR_READ){
         if(i2c_sr1 & ADDR_BIT_MSK){
-            if(i2c1_handle.transfer_size == 1){
+            if(i2c_handle->transfer_size == 1){
                 // disable ack bit before clearing addr
-                I2C_dis_ack(i2c1_handle.i2c_device->driver);
+                I2C_dis_ack(i2c_handle->i2c_device->driver);
                 // clear addr
-				dummy_read = I2C_get_SR1(i2c1_handle.i2c_device->driver);
-                i2c_sr2 = I2C_get_SR2(i2c1_handle.i2c_device->driver);
+				dummy_read = I2C_get_SR1(i2c_handle->i2c_device->driver);
+                i2c_sr2 = I2C_get_SR2(i2c_handle->i2c_device->driver);
+				(void)dummy_read;
+				(void)i2c_sr2;
                 // generate stop
-                I2C_stop_gen(i2c1_handle.i2c_device->driver);
+                I2C_stop_gen(i2c_handle->i2c_device->driver);
             }
-            else if(i2c1_handle.transfer_size == 2){
-				I2C_dis_ack(i2c1_handle.i2c_device->driver);
-				I2C_en_POS(i2c1_handle.i2c_device->driver);
-                dummy_read = I2C_get_SR1(i2c1_handle.i2c_device->driver);
-                i2c_sr2 = I2C_get_SR2(i2c1_handle.i2c_device->driver);
+            else if(i2c_handle->transfer_size == 2){
+				I2C_dis_ack(i2c_handle->i2c_device->driver);
+				I2C_en_POS(i2c_handle->i2c_device->driver);
+                dummy_read = I2C_get_SR1(i2c_handle->i2c_device->driver);
+                i2c_sr2 = I2C_get_SR2(i2c_handle->i2c_device->driver);
+				(void)dummy_read;
+				(void)i2c_sr2;
 				// we have now cleared addr
             }
 			else{
-                dummy_read = I2C_get_SR1(i2c1_handle.i2c_device->driver);
-                i2c_sr2 = I2C_get_SR2(i2c1_handle.i2c_device->driver);
+                dummy_read = I2C_get_SR1(i2c_handle->i2c_device->driver);
+                i2c_sr2 = I2C_get_SR2(i2c_handle->i2c_device->driver);
+				(void)dummy_read;
+				(void)i2c_sr2;
 			}
-            i2c1_handle.state = I2C_STATE_BUSY;
+            i2c_handle->state = I2C_STATE_BUSY;
         }
         else if(i2c_sr1 & BTF_BIT_MSK){
-			if(i2c1_handle.transfer_size == 2){
-				I2C_stop_gen(i2c1_handle.i2c_device->driver);
+			if(i2c_handle->transfer_size == 2){
+				I2C_stop_gen(i2c_handle->i2c_device->driver);
 				queue_enqueue(
-					i2c1_handle.rx_queue,
-					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+					i2c_handle->rx_queue,
+					I2C_get_DR_val(i2c_handle->i2c_device->driver)
 				);
 				queue_enqueue(
-					i2c1_handle.rx_queue,
-					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+					i2c_handle->rx_queue,
+					I2C_get_DR_val(i2c_handle->i2c_device->driver)
 				);
 				// reset everything and move on;
-				I2C_dis_POS(i2c1_handle.i2c_device->driver);
-				I2C_en_ack(i2c1_handle.i2c_device->driver);
-				i2c1_handle.state = I2C_STATE_DONE;
+				I2C_dis_POS(i2c_handle->i2c_device->driver);
+				I2C_en_ack(i2c_handle->i2c_device->driver);
+				i2c_handle->state = I2C_STATE_DONE;
+				if(i2c_handle->transfer_complete_cb != NULL){
+					i2c_handle->transfer_complete_cb();
+				}
 			}
 			else if(
-				((i2c1_handle.transfer_size - i2c1_handle.rx_count) == 3)
-				&& (i2c1_handle.transfer_size > 2)
+				((i2c_handle->transfer_size - i2c_handle->rx_count) == 3)
+				&& (i2c_handle->transfer_size > 2)
 			)
 			{
-				I2C_dis_ack(i2c1_handle.i2c_device->driver);
+				I2C_dis_ack(i2c_handle->i2c_device->driver);
 				queue_enqueue(
-					i2c1_handle.rx_queue, 
-					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+					i2c_handle->rx_queue, 
+					I2C_get_DR_val(i2c_handle->i2c_device->driver)
 				);
-				i2c1_handle.rx_count++;
+				i2c_handle->rx_count++;
 			}
 			else if(
-				((i2c1_handle.transfer_size - i2c1_handle.rx_count) == 2)
-				&& (i2c1_handle.transfer_size > 2)
+				((i2c_handle->transfer_size - i2c_handle->rx_count) == 2)
+				&& (i2c_handle->transfer_size > 2)
 			)
 			{
-				I2C_stop_gen(i2c1_handle.i2c_device->driver);
-				I2C_en_ack(i2c1_handle.i2c_device->driver);
-				i2c1_handle.state = I2C_STATE_DONE;
+				I2C_stop_gen(i2c_handle->i2c_device->driver);
+				I2C_en_ack(i2c_handle->i2c_device->driver);
 				queue_enqueue(
-					i2c1_handle.rx_queue, 
-					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+					i2c_handle->rx_queue, 
+					I2C_get_DR_val(i2c_handle->i2c_device->driver)
 				);
 				queue_enqueue(
-					i2c1_handle.rx_queue, 
-					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+					i2c_handle->rx_queue, 
+					I2C_get_DR_val(i2c_handle->i2c_device->driver)
 				);
+				i2c_handle->state = I2C_STATE_DONE;
+				if(i2c_handle->transfer_complete_cb != NULL){
+					i2c_handle->transfer_complete_cb();
+				}
 			}
 		}
 		else if(i2c_sr1 & RxNE_BIT_MSK){
-			if(i2c1_handle.transfer_size == 1){
+			if(i2c_handle->transfer_size == 1){
 				queue_enqueue(
-					i2c1_handle.rx_queue,
-					I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+					i2c_handle->rx_queue,
+					I2C_get_DR_val(i2c_handle->i2c_device->driver)
 				);
-				I2C_en_ack(i2c1_handle.i2c_device->driver);
-				i2c1_handle.state = I2C_STATE_DONE;
+				I2C_en_ack(i2c_handle->i2c_device->driver);
+				i2c_handle->state = I2C_STATE_DONE;
+				if(i2c_handle->transfer_complete_cb != NULL){
+					i2c_handle->transfer_complete_cb();
+				}
 			}
-			else if(i2c1_handle.transfer_size > 2){
-				if(i2c1_handle.transfer_size - i2c1_handle.rx_count > 3){
+			else if(i2c_handle->transfer_size > 2){
+				if(i2c_handle->transfer_size - i2c_handle->rx_count > 3){
 					queue_enqueue(
-						i2c1_handle.rx_queue,
-						I2C_get_DR_val(i2c1_handle.i2c_device->driver)
+						i2c_handle->rx_queue,
+						I2C_get_DR_val(i2c_handle->i2c_device->driver)
 					);
-					i2c1_handle.rx_count++;
+					i2c_handle->rx_count++;
 				}
 			}
 		}
     }
-    else if(i2c1_handle.direction == I2C_DIR_WRITE){
+    else if(i2c_handle->direction == I2C_DIR_WRITE){
         // already clears the addr if it is active
-		dummy_read = I2C_get_SR1(i2c1_handle.i2c_device->driver);
-        i2c_sr2 = I2C_get_SR2(i2c1_handle.i2c_device->driver);
+		dummy_read = I2C_get_SR1(i2c_handle->i2c_device->driver);
+        i2c_sr2 = I2C_get_SR2(i2c_handle->i2c_device->driver);
+		(void)dummy_read;
+		(void)i2c_sr2;
         uint8_t payload;
 		if(i2c_sr1 & TxE_BIT_MSK){
 			/**
@@ -241,18 +238,66 @@ void I2C1_EV_IRQHandler(){
 				if is_valus = false;
 					this mean we ran out of data
 			*/
-			__bool is_valid = queue_dequeue(i2c1_handle.tx_queue, &payload); 
+			__bool is_valid = queue_dequeue(
+				i2c_handle->tx_queue,
+				&payload
+			); 
 			if(!is_valid && (i2c_sr1 & BTF_BIT_MSK)){
-				I2C_stop_gen(i2c1_handle.i2c_device->driver);
-				i2c1_handle.state = I2C_STATE_DONE;
+				I2C_stop_gen(i2c_handle->i2c_device->driver);
+				i2c_handle->state = I2C_STATE_DONE;
+				I2C_en_buffer(i2c_handle->i2c_device->driver);
+				if(i2c_handle->transfer_complete_cb != NULL){
+					i2c_handle->transfer_complete_cb();
+				}
 			}
 			else if(!is_valid && !(i2c_sr1 & BTF_BIT_MSK)){
-				I2C_dis_buffer(i2c1_handle.i2c_device->driver);
+				I2C_dis_buffer(i2c_handle->i2c_device->driver);
 			}
 			else if(is_valid){
-				I2C_write_to_DR(i2c1_handle.i2c_device->driver, payload);
+				i2c_handle->state = I2C_STATE_BUSY;
+				I2C_write_to_DR(
+					i2c_handle->i2c_device->driver, 
+					payload
+				);
 			}
 		}
     }
 	__DSB();
+}
+
+void I2C1_EV_IRQHandler(void){
+	I2C_ev_handler(&i2c1_handle);
+}
+
+void I2C2_EV_IRQHandler(void){
+	I2C_ev_handler(&i2c2_handle);
+}
+
+void I2C3_EV_IRQHandler(void){
+	I2C_ev_handler(&i2c3_handle);
+}
+
+void I2C1_ER_IRQHandler(void){
+    uint32_t sr1 = I2C_get_SR1(i2c1_handle.i2c_device->driver);
+    
+    // Check if the error was an Acknowledge Failure (NACK)
+    if(sr1 & (1UL << 10)){
+        // Clear the AF bit by writing 0 to it
+		I2C_clear_AF(i2c1_handle.i2c_device->driver);
+        
+        // Generate a STOP condition to free the bus
+        I2C_stop_gen(i2c1_handle.i2c_device->driver);
+		i2c1_handle.error_code = I2C_ERR_AF;
+        i2c1_handle.state = I2C_STATE_DONE; 
+    }
+	// bus error
+	if(sr1 & (1UL<<8)){
+		__BKPT(0);
+	}
+	if(sr1 & (1UL<<9)){
+		__BKPT(0);
+	}
+	if(sr1 & (1UL<<11)){
+		__BKPT(0);
+	}
 }
