@@ -33,24 +33,24 @@ __INLINE SPI_driver_t* SPI_get_instance(SPI_instance_t instance){
     }
 }
 
-#define SPI_I2SPR_I2SDIV_BIT 9UL
+#define SPI_I2SPR_MCKOE_BIT 9UL
 
 void SPI_en_MCK(SPI_driver_t* self){
-    bit_band_write((uint32_t)self->SPI_I2SPR, SPI_I2SPR_I2SDIV_BIT, 1);
+    bit_band_write((uint32_t)&self->SPI_I2SPR, SPI_I2SPR_MCKOE_BIT, 1);
 }
 
 void SPI_dis_MCK(SPI_driver_t *self){
-    bit_band_write((uint32_t)self->SPI_I2SPR, SPI_I2SPR_I2SDIV_BIT, 0);
+    bit_band_write((uint32_t)&self->SPI_I2SPR, SPI_I2SPR_MCKOE_BIT, 0);
 }
 
 #define SPI_I2SPR_ODD_BIT 8UL
 
 void SPI_set_ODD_bit(SPI_driver_t* self){
-    bit_band_write((uint32_t)self->SPI_I2SPR, SPI_I2SPR_ODD_BIT, 1);
+    bit_band_write((uint32_t)&self->SPI_I2SPR, SPI_I2SPR_ODD_BIT, 1);
 }
 
 void SPI_reset_ODD_bit(SPI_driver_t *self){
-    bit_band_write((uint32_t)self->SPI_I2SPR, SPI_I2SPR_ODD_BIT, 0);
+    bit_band_write((uint32_t)&self->SPI_I2SPR, SPI_I2SPR_ODD_BIT, 0);
 }
 
 #define SPI_I2SDIV_FIELD_LEN 8UL
@@ -83,11 +83,11 @@ void SPI_set_mode(SPI_driver_t* self, SPI_mode_t mode){
 #define SPI_I2SE_BIT 10UL
 
 void SPI_en_I2S(SPI_driver_t* self){
-    bit_band_write((uint32_t)self->SPI_I2SCFGR, SPI_I2SE_BIT, 1);
+    bit_band_write((uint32_t)&self->SPI_I2SCFGR, SPI_I2SE_BIT, 1);
 }
 
 void SPI_dis_I2S(SPI_driver_t *self){
-    bit_band_write((uint32_t)self->SPI_I2SCFGR, SPI_I2SE_BIT, 0);
+    bit_band_write((uint32_t)&self->SPI_I2SCFGR, SPI_I2SE_BIT, 0);
 }
 
 #define SPI_I2SCFG_START_BIT 8UL
@@ -105,7 +105,7 @@ void SPI_set_I2S_conf(SPI_driver_t* self, I2S_conf_t conf){
 
 void SPI_set_I2S_std(SPI_driver_t* self, I2S_std_t std){
     uint32_t reg_val = self->SPI_I2SCFGR;
-    reg_val &= (msk_of_ones(SPI_I2SSTD_FIELD_LEN)<<SPI_I2SSTD_START_BIT);
+    reg_val &= ~(msk_of_ones(SPI_I2SSTD_FIELD_LEN)<<SPI_I2SSTD_START_BIT);
     reg_val |= ((uint32_t)std<<SPI_I2SSTD_START_BIT);
     self->SPI_I2SCFGR = reg_val;
 }
@@ -115,7 +115,7 @@ void SPI_set_I2S_std(SPI_driver_t* self, I2S_std_t std){
 
 void SPI_set_I2S_data_len(SPI_driver_t* self, I2S_data_len_t len){
     uint32_t reg_val = self->SPI_I2SCFGR;
-    reg_val &= (msk_of_ones(SPI_DATLEN_FIELD_LEN)<<SPI_DATLEN_START_BIT);
+    reg_val &= ~(msk_of_ones(SPI_DATLEN_FIELD_LEN)<<SPI_DATLEN_START_BIT);
     reg_val |= ((uint32_t)len<<SPI_DATLEN_START_BIT);
     self->SPI_I2SCFGR = reg_val;
 }
