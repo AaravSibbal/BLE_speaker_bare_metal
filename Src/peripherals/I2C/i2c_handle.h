@@ -33,8 +33,8 @@ typedef struct{
     volatile I2C_error_t error_code;
     volatile uint16_t transfer_size;
     volatile uint16_t rx_count;
-    uint8_t peripheral_write_addr;
     void (*transfer_complete_cb)(void);
+    uint8_t peripheral_write_addr;
 }I2C_handle_t;
 
 I2C_handle_t* I2C_handle_init(

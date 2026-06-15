@@ -70,6 +70,12 @@ typedef enum GPIO_PUPDR{
     PULL_DOWN
 }GPIO_PUPDR_t;
 
+typedef enum GPIO_OSPEEDR{
+    OSPEED_LOW = 0,
+    OSPEED_MEDIUM,
+    OSPEED_HIGH,
+    OSPEED_VERY_HIGH
+}GPIO_OSPEEDR_t;
 
 
 GPIO_t* GPIO_init(const GPIO_port_t port, RCC_t* rcc);
@@ -80,6 +86,8 @@ void GPIO_set_alt_func(GPIO_t* self, const GPIO_Pin_t pin, const GPIO_AFx_t func
 void GPIO_set_pupdr(GPIO_t *self, const GPIO_Pin_t pin, const GPIO_PUPDR_t val);
 uint32_t GPIO_get_IDR_G(GPIO_port_t port, GPIO_Pin_t pin);
 uint32_t GPIO_get_IDR(GPIO_t* self, GPIO_Pin_t pin);
+void GPIO_set_ospeedr(GPIO_t* self, GPIO_Pin_t pin, GPIO_OSPEEDR_t val);
+GPIO_t* GPIO_get_instance(const GPIO_port_t port);
 
 
 #endif

@@ -40,6 +40,7 @@ void I2C_set_freq_bits(I2C_driver_t* driver, uint32_t clock_spd_Mhz);
 void I2C_set_ccr(I2C_driver_t* driver, uint32_t ccr_val);
 void I2C_set_trise(I2C_driver_t* driver, uint32_t trise_val);
 void I2C_en_peripheral(I2C_driver_t* driver);
+void I2C_dis_peripheral(I2C_driver_t* driver);
 void I2C_start_gen(I2C_driver_t* driver);
 void I2C_stop_gen(I2C_driver_t* driver);
 void I2C_write_to_DR(I2C_driver_t* driver, uint8_t payload);
@@ -48,4 +49,5 @@ uint32_t I2C_get_SR1(I2C_driver_t* driver);
 uint32_t I2C_get_SR2(I2C_driver_t* driver);
 void I2C_en_POS(I2C_driver_t* driver);
 void I2C_dis_POS(I2C_driver_t* driver);
+void I2C_clear_AF(I2C_driver_t* driver);
 #endif

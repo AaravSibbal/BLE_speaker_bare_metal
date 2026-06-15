@@ -3,6 +3,7 @@
 #include "../../arm/arm.h"
 #include "Src/def.h"
 #include "Src/peripherals/rcc/rcc.h"
+#include <stdint.h>
 
 #define GPIO_BASE_ADDRESS (0x40020000)
 #define GPIO_OFFSET (0x400)
@@ -107,7 +108,7 @@ GPIO_t* GPIO_init(const GPIO_port_t port, RCC_t* rcc){
     return gpio;
 }
 
-__STATIC_INLINE GPIO_t* GPIO_get_instance(const GPIO_port_t port){
+__INLINE GPIO_t* GPIO_get_instance(const GPIO_port_t port){
     return ((GPIO_t*)(GPIO_BASE_ADDRESS + (port * GPIO_OFFSET)));
 }
 
@@ -118,4 +119,13 @@ uint32_t GPIO_get_IDR_G(const GPIO_port_t port, const GPIO_Pin_t pin){
 
 uint32_t GPIO_get_IDR(GPIO_t* self, GPIO_Pin_t pin){
     return (0x01UL & (self->IDR >> pin));
+}
+
+#define GPIO_OSPEEDR_FIELD_LEN 2UL
+
+void GPIO_set_ospeedr(GPIO_t* self, GPIO_Pin_t pin, GPIO_OSPEEDR_t val){
+    uint32_t reg_val = self->OSPEEDR;
+    reg_val &= ~(msk_of_ones(GPIO_OSPEEDR_FIELD_LEN)<<(2*pin));
+    reg_val |= ((uint32_t)val<<(2*pin));
+    self->OSPEEDR = reg_val;
 }

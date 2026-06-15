@@ -56,6 +56,8 @@ set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/nvic/nvic.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/rcc/rcc.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/scb/scb.c   
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/spi/spi_driver.c   
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/spi/i2s.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/syscfg/syscfg.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/timers/systick/systick.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/tpiu/tpiu.c   

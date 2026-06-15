@@ -1,5 +1,6 @@
 #include "rcc.h"
 #include "Src/def.h"
+#include <stdint.h>
 
 typedef struct RCC{
     __IO uint32_t CR;
@@ -103,4 +104,58 @@ void RCC_reset_I2C1(RCC_t* self){
     (void)self->APB1RSTR;
     bit_band_write(addr, I2C1_APB1RSTR_BIT, 0);
     (void)self->APB1RSTR;
+}
+
+#define RCC_CR_PLLI2S_BIT 26UL
+
+void RCC_en_PLLI2S(RCC_t* self){
+    uint32_t addr = (uint32_t)(&self->CR);
+    bit_band_write(addr, RCC_CR_PLLI2S_BIT, 1);
+}
+
+#define RCC_CR_PLLI2S_READY_BIT 27UL
+
+uint32_t RCC_get_PLLI2S_ready(RCC_t* self){
+    return (uint32_t)((self->CR >> RCC_CR_PLLI2S_READY_BIT) & 0x1UL);
+}
+
+#define PLLI2SR_FIELD_LEN 3UL
+#define PLLI2SR_START_BIT 28UL
+
+
+void RCC_set_PLLI2SR(RCC_t* self, PLLI2SR_t val){
+    uint32_t reg_val = self->PLLI2SCFGR;
+    reg_val &= ~(msk_of_ones(PLLI2SR_FIELD_LEN)<<PLLI2SR_START_BIT);
+    reg_val |= ((uint32_t)val<<PLLI2SR_START_BIT);
+    self->PLLI2SCFGR = reg_val;
+}
+
+#define PLLI2SN_FIELD_LEN 9UL
+#define PLLI2SN_START_BIT 6UL
+#define PLLI2SN_LOWER_LIMIT 50UL
+#define PLLI2SN_UPPER_LIMIT 432UL
+
+__bool RCC_set_PLLI2SN(RCC_t* self, uint32_t val){
+    if(val < PLLI2SN_LOWER_LIMIT|| val > PLLI2SN_UPPER_LIMIT){
+        return FALSE;
+    }
+    uint32_t reg_val = self->PLLI2SCFGR;
+    reg_val &= ~(msk_of_ones(PLLI2SN_FIELD_LEN)<<PLLI2SN_START_BIT);
+    reg_val |= (val<<PLLI2SN_START_BIT);
+    self->PLLI2SCFGR = reg_val;
+    return TRUE;
+}
+
+#define RCC_SPI2EN_BIT 14UL  
+
+void RCC_en_SPI2(RCC_t* self){
+    uint32_t addr = (uint32_t)&self->APB1ENR;
+    bit_band_write(addr, RCC_SPI2EN_BIT, 1);
+}
+
+#define RCC_SPI3EN_BIT 15UL
+
+void RCC_en_SPI3(RCC_t *self){
+    uint32_t addr = (uint32_t)&self->APB1ENR;
+    bit_band_write(addr, RCC_SPI3EN_BIT, 1);
 }
