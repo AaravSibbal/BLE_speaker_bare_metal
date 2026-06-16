@@ -1,13 +1,10 @@
 #ifndef I2C_H
 #define I2C_H
 
-
 #include "../../def.h"
 #include "../gpio/gpio.h"
 #include "../rcc/rcc.h"
-#include "Src/peripherals/gpio/gpio.h"
 #include "i2c_driver.h"
-
 
 typedef struct I2C{
     I2C_driver_t* driver;
@@ -27,6 +24,5 @@ I2C_t* I2C_init(I2C_instance_t instance, I2C_mode_t mode,
     GPIO_Pin_t scl_pin, uint32_t clock_speed_Mhz, RCC_t* rcc); 
 
 I2C_t* I2C_get_instance(const I2C_instance_t instance);
-
 
 #endif

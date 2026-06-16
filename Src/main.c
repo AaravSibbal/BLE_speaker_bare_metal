@@ -18,6 +18,7 @@
 #include "arm/arm.h"
 #include "peripherals/i2c/i2c.h"
 #include "devices/dac/dac.h"
+#include "ballmer_audio.h"
 #include <stdint.h>
 
 // void something(I2C_handle_t* handle, uint16_t transfer_size){
@@ -45,14 +46,14 @@ int main(void){
     __DSB();
     __ISB();
 
-    const int16_t sine_wave[48] = {
-    0, 1045, 2079, 3090, 4067, 5000, 5877, 6691, 
-    7431, 8089, 8660, 9135, 9510, 9781, 9945, 10000, 
-    9945, 9781, 9510, 9135, 8660, 8089, 7431, 6691, 
-    5877, 5000, 4067, 3090, 2079, 1045, 0, -1045, 
-    -2079, -3090, -4067, -5000, -5877, -6691, -7431, -8089, 
-    -8660, -9135, -9510, -9781, -9945, -10000, -9945, -9781
-    };
+    // const int16_t sine_wave[48] = {
+    // 0, 1045, 2079, 3090, 4067, 5000, 5877, 6691, 
+    // 7431, 8089, 8660, 9135, 9510, 9781, 9945, 10000, 
+    // 9945, 9781, 9510, 9135, 8660, 8089, 7431, 6691, 
+    // 5877, 5000, 4067, 3090, 2079, 1045, 0, -1045, 
+    // -2079, -3090, -4067, -5000, -5877, -6691, -7431, -8089, 
+    // -8660, -9135, -9510, -9781, -9945, -10000, -9945, -9781
+    // };
 
     RCC_t* rcc = init_RCC();
     RCC_en_GPIO(rcc, BUTTON_GPIO_PORT);
@@ -79,12 +80,12 @@ int main(void){
             // Write a 16-bit zero to the Data Register
             // This instantly forces the STM32 to start generating the SCK and WS clocks
             // spi3->DR = 0x0000; 
-            SPI_set_DR(spi3, sine_wave[sample_index]);
+            SPI_set_DR(spi3, ballmer_audio[sample_index]);
             channel_toggle++;
             if(channel_toggle >= 2){
                 channel_toggle = 0;
                 sample_index++;
-                if(sample_index >= 48){
+                if(sample_index >= 241571){
                     sample_index = 0;
                 }
             }
