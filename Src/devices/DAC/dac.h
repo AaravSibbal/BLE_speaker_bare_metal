@@ -2,6 +2,7 @@
 #define DAC_H
 
 
-void dac_init()
+#include "Src/peripherals/rcc/rcc.h"
+void dac_init(RCC_t* rcc);
 
 #endif

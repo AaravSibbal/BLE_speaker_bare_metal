@@ -151,3 +151,11 @@ void SPI_set_I2S_ckpol(SPI_driver_t* self, I2S_ckpol_t val){
             return;
     }
 }
+
+__INLINE uint32_t SPI_get_SR(SPI_driver_t* self){
+    return (self->SR);
+}
+
+__INLINE void SPI_set_DR(SPI_driver_t* self, uint16_t val){
+    self->DR = (uint32_t)val;
+}

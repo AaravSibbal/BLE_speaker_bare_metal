@@ -67,6 +67,8 @@ void SPI_set_I2S_std(SPI_driver_t* self, I2S_std_t std);
 void SPI_set_I2S_data_len(SPI_driver_t* self, I2S_data_len_t len);
 void SPI_set_I2S_chan_len(SPI_driver_t* self, I2S_chan_len_t len);
 void SPI_set_I2S_ckpol(SPI_driver_t* self, I2S_ckpol_t val);
+uint32_t SPI_get_SR(SPI_driver_t* self);
+void SPI_set_DR(SPI_driver_t* self, uint16_t val);
 
 
 #endif

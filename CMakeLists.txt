@@ -42,7 +42,6 @@ set(cpu_PARAMS
 
 # Sources
 set(sources_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/Src/main.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/dbgmcu/dbgmcu.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/demcr/demcr.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/itm/itm.c   
@@ -64,6 +63,8 @@ set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/interrupts/interrupt.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/devices/LED/LED.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/devices/button/button.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/devices/dac/dac.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/main.c
 
 )
 

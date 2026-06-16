@@ -1,7 +1,7 @@
 #ifndef I2S_H
 #define I2S_H
 
-#include "Src/peripherals/rcc/rcc.h"
+#include "../rcc/rcc.h"
 typedef enum I2S_instance{
     I2S_INSTANCE_2 = 0,
     I2S_INSTANCE_3 = 1

@@ -1,9 +1,10 @@
 #include "i2s.h"
-#include "Src/arm/arm.h"
-#include "Src/def.h"
-#include "Src/peripherals/gpio/gpio.h"
-#include "Src/peripherals/rcc/rcc.h"
+#include "../../def.h"
+#include "../../arm/arm.h"
+#include "../gpio/gpio.h"
+#include "../rcc/rcc.h"
 #include "spi_driver.h"
+#include "stdint.h"
 
 static const GPIO_port_t I2S3_MCK_GPIO_PORT = GPIO_PORT_C;
 static const GPIO_Pin_t I2S3_MCK_GPIO_PIN = GPIO_PIN_7;

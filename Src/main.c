@@ -12,10 +12,12 @@
 #include "peripherals/i2c/i2c_driver.h"
 #include "peripherals/i2c/i2c_handle.h"
 #include "peripherals/rcc/rcc.h"
+#include "peripherals/spi/spi_driver.h"
 #include "peripherals/timers/systick/systick.h"
 #include "services/interrupts/interrupt.h"
 #include "arm/arm.h"
 #include "peripherals/i2c/i2c.h"
+#include "devices/dac/dac.h"
 #include <stdint.h>
 
 // void something(I2C_handle_t* handle, uint16_t transfer_size){
@@ -28,13 +30,29 @@ int main(void){
     set_priority(I2C1_EV_IRQn, 2);
     set_priority(I2C1_ER_IRQn, 3);
     set_priority(SysTick_IRQn,4);
+    set_priority(BusFault_IRQn, 0);
+    set_priority(MemoryManagement_IRQn, 0);
+    set_priority(UsageFault_IRQn, 0);
+
 
     enable_IRQ(SysTick_IRQn);
     enable_IRQ(I2C1_ER_IRQn);
     enable_IRQ(I2C1_EV_IRQn);
+    enable_IRQ(BusFault_IRQn);
+    enable_IRQ(MemoryManagement_IRQn);
+    enable_IRQ(UsageFault_IRQn);
 
     __DSB();
     __ISB();
+
+    const int16_t sine_wave[48] = {
+    0, 1045, 2079, 3090, 4067, 5000, 5877, 6691, 
+    7431, 8089, 8660, 9135, 9510, 9781, 9945, 10000, 
+    9945, 9781, 9510, 9135, 8660, 8089, 7431, 6691, 
+    5877, 5000, 4067, 3090, 2079, 1045, 0, -1045, 
+    -2079, -3090, -4067, -5000, -5877, -6691, -7431, -8089, 
+    -8660, -9135, -9510, -9781, -9945, -10000, -9945, -9781
+    };
 
     RCC_t* rcc = init_RCC();
     RCC_en_GPIO(rcc, BUTTON_GPIO_PORT);
@@ -43,82 +61,37 @@ int main(void){
     GPIO_t* green_led_gpio = GPIO_init(GPIO_PORT_D, rcc);
     LED_t* green_led = LED_init(LED_GREEN, green_led_gpio);
 
-    // --- NEW DAC WAKEUP CODE ---
-    // Configure PD4 as General Purpose Output to control DAC Reset
     GPIO_set_moder(green_led_gpio, GPIO_PIN_4, GPIO_MODE_OUTPUT);
     GPIO_set_otyper(green_led_gpio, GPIO_PIN_4, GPIO_TYPE_PUSH_PULL);
     
-    // Drive PD4 HIGH to bring the CS43L22 DAC out of reset
-    GPIO_set_odr(green_led_gpio, GPIO_PIN_4, 1);
+    dac_init(rcc);
 
-    // Give the DAC a few milliseconds to internally boot before talking to it
-    for(volatile int i = 0; i < 50000; i++);
-    // GPIO_t* button_gpio = GPIO_init_empty(GPIO_PORT_A, GPIO_PIN_0);
+    SPI_driver_t* spi3 = SPI_get_instance(SPI_INSTANCE_3);
 
-    I2C_t* i2c1_device = I2C_init(
-        I2C_1, 
-        I2C_MODE_STANDARD, 
-        i2c1_sda_gpio_port, 
-        i2c1_sda_gpio_pin,
-        i2c1_scl_gpio_port,
-        i2c1_scl_gpio_pin,
-        16, 
-        rcc
-    );
-    
-    if(i2c1_device == NULL){
-        __BKPT(0);
+    uint32_t sample_index = 0;
+    uint8_t channel_toggle = 0;
+
+    while(1) {
+        // Check the TXE (Transmit buffer empty) bit in the Status Register
+        // TXE is Bit 1 of SPI_SR
+        if (SPI_get_SR(spi3) & (1 << 1)) {
+            
+            // Write a 16-bit zero to the Data Register
+            // This instantly forces the STM32 to start generating the SCK and WS clocks
+            // spi3->DR = 0x0000; 
+            SPI_set_DR(spi3, sine_wave[sample_index]);
+            channel_toggle++;
+            if(channel_toggle >= 2){
+                channel_toggle = 0;
+                sample_index++;
+                if(sample_index >= 48){
+                    sample_index = 0;
+                }
+            }
+            
+        }
     }
 
-
-
-    queue_t i2c1_rx_queue;
-    queue_t i2c1_tx_queue;
-    uint8_t rx_buffer[1];
-    uint8_t tx_buffer[1];
-    queue_t* i2c1_rx_queue_ptr = queue_init(
-        &i2c1_rx_queue, 
-        rx_buffer, 
-        QUEUE_CAP_1
-    );
-    queue_t* i2c1_tx_queue_ptr = queue_init(
-        &i2c1_tx_queue, 
-        tx_buffer, 
-        QUEUE_CAP_1
-    );
-
-    const uint8_t DAC_write_addr = 0x94;
-
-    I2C_handle_t* i2c1_handle = I2C_handle_init(
-        i2c1_device,
-        I2C_1,
-        i2c1_rx_queue_ptr, 
-        i2c1_tx_queue_ptr, 
-        DAC_write_addr,
-        NULL
-    );
-
-    const uint8_t dac_chip_id = 0x01;
-
-    __bool result = queue_enqueue(i2c1_handle->tx_queue, dac_chip_id);
-    if(result == FALSE){
-        printf_("queue failed here");
-        __BKPT(0);
-    }
-
-    I2C_write(i2c1_handle);
-    while(i2c1_handle->state != I2C_STATE_DONE){
-        // __WFI();
-    }
-    while(I2C_get_SR2(i2c1_device->driver) & 0x02){}
-    I2C_read(i2c1_handle, 1);
-    while(i2c1_handle->state != I2C_STATE_DONE){
-        // __WFI();
-    }
-    uint8_t val;
-    queue_dequeue(i2c1_handle->rx_queue, &val);
-    printf_("val: %X", val);
-    
     Systick_t* systick = Systick_init(16000000, AHB);
     Systick_start_clock(systick);
     uint32_t ms;
