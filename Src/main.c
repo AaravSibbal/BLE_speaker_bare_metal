@@ -11,6 +11,7 @@
 #include "peripherals/i2c/I2C.h"
 #include "peripherals/i2c/i2c_driver.h"
 #include "peripherals/i2c/i2c_handle.h"
+#include "peripherals/itm/itm.h"
 #include "peripherals/rcc/rcc.h"
 #include "peripherals/spi/spi_driver.h"
 #include "peripherals/timers/systick/systick.h"
@@ -58,6 +59,8 @@ int main(void){
     RCC_t* rcc = init_RCC();
     RCC_en_GPIO(rcc, BUTTON_GPIO_PORT);
     RCC_en_GPIO(rcc, GPIO_PORT_D);
+
+    ITM_init(rcc);
 
     GPIO_t* green_led_gpio = GPIO_init(GPIO_PORT_D, rcc);
     LED_t* green_led = LED_init(LED_GREEN, green_led_gpio);

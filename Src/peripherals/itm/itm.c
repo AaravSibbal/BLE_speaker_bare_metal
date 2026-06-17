@@ -14,6 +14,8 @@
 #define ITM_GPIO_PIN GPIO_PIN_3
 
 
+ITM_t itm;
+
 typedef struct ITM_driver{
     __IO uint32_t ITM_stim_port[32];
     uint32_t RESERVED_0[864];
@@ -28,7 +30,6 @@ typedef struct ITM_driver{
 
 struct ITM{
     ITM_driver_t* driver;
-    GPIO_t* gpio;
 };
 
 static void ITM_unlock_access(ITM_t* self){
@@ -39,9 +40,9 @@ static void ITM_enable(ITM_t* self){
     self->driver->ITM_trace_ctrl |= ITM_GLOBAL_EN_MSK;
 }
 
-static void ITM_gpio_setup(ITM_t* self){
-    GPIO_set_moder(self->gpio, ITM_GPIO_PIN, GPIO_MODE_ALT);
-    GPIO_set_alt_func(self->gpio, ITM_GPIO_PIN, AF0);
+static void ITM_gpio_setup(GPIO_t* gpio){
+    GPIO_set_moder(gpio, ITM_GPIO_PIN, GPIO_MODE_ALT);
+    GPIO_set_alt_func(gpio, ITM_GPIO_PIN, AF0);
 }
 
 static void ITM_unlock_port(ITM_t* self, uint8_t port){
@@ -54,16 +55,17 @@ static void ITM_unlock_port(ITM_t* self, uint8_t port){
     self->driver->ITM_trace_en |= (1UL<<port);
 }
 
-ITM_t* ITM_init(ITM_t* self, GPIO_t* gpio, RCC_t* rcc_obj){
-    self->driver = ITM_ENGINE;
-    self->gpio = GPIO_init(GPIO_PORT_B, rcc_obj);
-    ITM_gpio_setup(self);
+ITM_t* ITM_init(RCC_t* rcc_obj){
+    
+    itm.driver = (ITM_driver_t*)ITM_ENGINE;
+    GPIO_t* gpio_b = GPIO_init(GPIO_PORT_B, rcc_obj);
+    ITM_gpio_setup(gpio_b);
     DEMCR_enable_trace();
     DBGMCU_debug_enable(DBGMCU_ASYNC);
-    ITM_unlock_access(self);
-    ITM_enable(self);
-    ITM_unlock_port(self, 0);
-    return self;
+    ITM_unlock_access(&itm);
+    ITM_enable(&itm);
+    ITM_unlock_port(&itm, 0);
+    return &itm;
 }
 
 void ITM_put_char(ITM_t* self, char ch, uint8_t port){

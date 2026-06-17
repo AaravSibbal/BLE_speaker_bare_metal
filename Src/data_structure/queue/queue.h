@@ -16,7 +16,7 @@ typedef enum{
     QUEUE_CAP_4,
     QUEUE_CAP_8,
     QUEUE_CAP_16,
-    QUEUE_CAP_32,
+    QUEUE_CAP_32
 }queue_cap_t;
 
 

@@ -15,11 +15,11 @@ queue_t* queue_init(queue_t* self, uint8_t* buffer, queue_cap_t capacity){
     return self;
 }
 
-__bool queue_is_empty(queue_t* self){
+__INLINE __bool queue_is_empty(queue_t* self){
     return self->head == self->tail;
 }
 
-__bool queue_is_full(queue_t* self){
+__INLINE __bool queue_is_full(queue_t* self){
     return (((self->head) - (self->tail)) == self->capacity);
 }
 __bool queue_enqueue(queue_t* self, uint8_t data){
@@ -33,7 +33,7 @@ __bool queue_enqueue(queue_t* self, uint8_t data){
     return TRUE;
 }
 
-__bool queue_dequeue(queue_t* self, uint8_t* out_data){
+__INLINE __bool queue_dequeue(queue_t* self, uint8_t* out_data){
     if(queue_is_empty(self)){
         out_data = NULL;
         return FALSE;
@@ -44,6 +44,6 @@ __bool queue_dequeue(queue_t* self, uint8_t* out_data){
     return TRUE;
 }
 
-queue_cap_t queue_get_capacity(queue_t* self){
+__INLINE queue_cap_t queue_get_capacity(queue_t* self){
     return self->capacity;
 }
