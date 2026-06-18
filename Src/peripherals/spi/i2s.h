@@ -8,7 +8,5 @@ typedef enum I2S_instance{
 }I2S_instance_t;
 
 void i2s_init(I2S_instance_t instance, RCC_t* rcc);
-void i2s3_en_gpio_clock(RCC_t* rcc);
-void i2s_init_gpio(I2S_instance_t instance, RCC_t* rcc);
 
 #endif

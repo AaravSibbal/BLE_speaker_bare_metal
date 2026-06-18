@@ -29,7 +29,7 @@ __STATIC_INLINE void i2s_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin, GPIO_AFx_t af_v
     GPIO_set_moder(gpio, pin, I2S_gpio_mode);
 }
 
-void i2s_init_gpio(I2S_instance_t instance, RCC_t* rcc){
+__STATIC_INLINE void i2s_init_gpio(I2S_instance_t instance, RCC_t* rcc){
     switch (instance) {
         case I2S_INSTANCE_2:
             // not implemented yet
