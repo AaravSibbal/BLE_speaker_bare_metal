@@ -212,7 +212,8 @@ void SCB_write_priority_grouping(SCB_t * const self, PriorityGroup_t pg){
     self->SCB_AIRCR = aircr_clear | (SCB_AIRCR_KEY<<16) | (pg_32<<8);
 }
 
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch-enum"
 void SCB_enable_IRQ(SCB_t * const self, IRQn_t IRQn){
     if(IRQn >= 0){
         printf("SCB: IRQn greater than 0, check failed, IRQn: %d\n", IRQn);
@@ -442,3 +443,5 @@ uint32_t SCB_get_priority(SCB_t * const self, IRQn_t IRQn){
             return 0;
     }   
 }
+
+#pragma GCC diagnostic pop

@@ -147,6 +147,9 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     -Wextra
     -Wpedantic
     -Wno-unused-parameter
+    -Werror
+    -Wenum-conversion
+    -Wswitch-enum
     $<$<COMPILE_LANGUAGE:C>: >
     $<$<COMPILE_LANGUAGE:CXX>:
 

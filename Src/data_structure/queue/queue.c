@@ -2,6 +2,7 @@
 
 #include "../../peripherals/I2C/I2C.h"
 #include "../../arm/arm.h"
+#include <stddef.h>
 
 queue_t* queue_init(queue_t* self, uint8_t* buffer, queue_cap_t capacity){
     if(buffer == NULL){

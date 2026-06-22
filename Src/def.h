@@ -6,7 +6,7 @@
 
 #define __IO volatile 
 
-#define NULL ((void*)0)
+// #define NULL ((void*)0)
 #define __STATIC_INLINE __attribute__((always_inline)) static inline
 #define __INLINE __attribute__((always_inline)) inline
 

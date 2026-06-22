@@ -112,6 +112,13 @@ EXTI_error_t EXTI_config_line(EXTI_t* self, SYSCFG_t* syscfg, EXTI_line_t line, 
         case EXTI_LINE_15: 
             enable_IRQ(EXTI15_10_IRQn);
             break;
+        case EXTI_LINE_PVD:
+        case EXTI_LINE_RTC_ALARM:
+        case EXTI_LINE_USB_FS_WAKEUP:
+        case EXTI_LINE_ETH_WAKEUP:
+        case EXTI_LINE_USB_HS_WAKEUP:
+        case EXTI_LINE_RTC_TAMPER:
+        case EXTI_LINE_RTC_WAKEUP:
         default:
             return EXTI_BAD_LINE;
     }

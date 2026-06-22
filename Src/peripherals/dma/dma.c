@@ -91,7 +91,7 @@ __INLINE void DMA_clear_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
     self->IFCR[ifcr_idx] = (1UL<<clear_bit);   
 }
 
-uint32_t DMA_get_tc(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__INLINE uint32_t DMA_get_tc(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -104,7 +104,7 @@ uint32_t DMA_get_tc(DMA_driver_t* self, DMA_stream_id_t stream_id){
     return 0;
 }
 
-uint32_t DMA_get_ht(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__INLINE uint32_t DMA_get_ht(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -116,7 +116,7 @@ uint32_t DMA_get_ht(DMA_driver_t* self, DMA_stream_id_t stream_id){
     }
     return 0;
 }
-uint32_t DMA_get_te(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__INLINE uint32_t DMA_get_te(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -128,7 +128,7 @@ uint32_t DMA_get_te(DMA_driver_t* self, DMA_stream_id_t stream_id){
     }
     return 0;
 }
-uint32_t DMA_get_dme(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__INLINE uint32_t DMA_get_dme(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -140,7 +140,7 @@ uint32_t DMA_get_dme(DMA_driver_t* self, DMA_stream_id_t stream_id){
     }
     return 0;
 }
-uint32_t DMA_get_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__INLINE uint32_t DMA_get_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -151,4 +151,92 @@ uint32_t DMA_get_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
         return 1;
     }
     return 0;
+}
+
+#define DMA_TCIE_BIT 4UL
+
+__INLINE void DMA_en_TC_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+    bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_TCIE_BIT, 
+        1
+    );
+}
+
+#define DMA_HTIE_BIT 3UL
+
+__INLINE void DMA_en_HT_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+     bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_HTIE_BIT, 
+        1
+    );   
+}
+
+#define DMA_TEIE_BIT 2UL
+
+__INLINE void DMA_en_TE_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+     bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_TEIE_BIT, 
+        1
+    );   
+}
+
+#define DMA_DMEIE_BIT 1UL
+
+__INLINE void DMA_en_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+     bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_DMEIE_BIT, 
+        1
+    );   
+}
+
+
+__INLINE void DMA_dis_TC_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+     bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_DMEIE_BIT, 
+        0
+    );   
+}
+__INLINE void DMA_dis_HT_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+     bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_DMEIE_BIT, 
+        0
+    );   
+}
+__INLINE void DMA_dis_TE_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+     bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_DMEIE_BIT, 
+        0
+    );   
+}
+__INLINE void DMA_dis_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+     bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_DMEIE_BIT, 
+        0
+    );   
+}
+
+#define DMA_EN_BIT 0UL
+
+__INLINE void DMA_en_stream(DMA_driver_t* self, DMA_stream_id_t stream_id){
+    bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_EN_BIT, 
+        1
+    );      
+}
+
+__INLINE void DMA_dis_stream(DMA_driver_t* self, DMA_stream_id_t stream_id){
+     bit_band_write(
+        (uint32_t)&self->streams[stream_id].CR,
+        DMA_EN_BIT, 
+        0
+    );         
 }
