@@ -33,4 +33,7 @@ void RCC_set_PLLI2SR(RCC_t* self, PLLI2SR_t val);
 __bool RCC_set_PLLI2SN(RCC_t* self, uint32_t val);
 void RCC_en_SPI2(RCC_t* self);
 void RCC_en_SPI3(RCC_t* self);
+void RCC_en_DMA1(RCC_t* self);
+void RCC_en_DMA2(RCC_t* self);
+
 #endif

@@ -159,3 +159,13 @@ void RCC_en_SPI3(RCC_t *self){
     uint32_t addr = (uint32_t)&self->APB1ENR;
     bit_band_write(addr, RCC_SPI3EN_BIT, 1);
 }
+
+void RCC_en_DMA1(RCC_t* self){
+    static const uint32_t DMA1_AHB1_BIT = 21;
+    bit_band_write((uint32_t)&self->AHB1ENR, DMA1_AHB1_BIT, 1);
+
+}
+void RCC_en_DMA2(RCC_t* self){
+    static const uint32_t DMA2_AHB1_BIT = 22;
+    bit_band_write((uint32_t)&self->AHB1ENR, DMA2_AHB1_BIT, 1);
+}

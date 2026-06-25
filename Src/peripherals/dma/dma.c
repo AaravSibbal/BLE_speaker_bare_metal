@@ -1,8 +1,10 @@
 #include "dma.h"
 
+#include <cstddef>
 #include <stdint.h>
 #include "../../def.h"
 #include "Src/arm/arm.h"
+#include "Src/assert.h"
 
 typedef struct DMA_stream{
     __IO uint32_t CR;
@@ -27,6 +29,9 @@ typedef enum intrpt_reg{
     HALF_TRANSFER = 4,
     TRANSFER_COMPLETE = 5
 }intrpt_reg_t;
+
+#define DMA1_BASE_ADDR (0x40026000)
+#define DMA2_BASE_ADDR (0x40026400)
 
 __STATIC_INLINE uint32_t DMA_get_intrpt_bit(DMA_stream_id_t stream_id, intrpt_reg_t reg){
     uint32_t some = stream_id%4;
@@ -239,4 +244,116 @@ __INLINE void DMA_dis_stream(DMA_driver_t* self, DMA_stream_id_t stream_id){
         DMA_EN_BIT, 
         0
     );         
+}
+
+__STATIC_INLINE DMA_driver_t* DMA_get_instance(DMA_instance_t instance){
+    switch (instance) {
+        case DMA_INSTANCE_1:
+            return (DMA_driver_t*)DMA1_BASE_ADDR;
+        case DMA_INSTANCE_2:
+            return (DMA_driver_t*)DMA2_BASE_ADDR;
+        default:
+            return NULL;
+    }
+}
+
+
+DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc){
+    static const uint32_t DMA_CR_RESERVED_START_BIT = 28;
+    static const uint32_t DMA_CR_RESERVED_FIELD_LEN = 4;
+    static const uint32_t DMA_CR_RESERVED1_START_BIT = 20;
+    static const uint32_t DMA_CHSEL_START_BIT = 25;
+    static const uint32_t DMA_MBURST_START_BIT = 23;
+    static const uint32_t DMA_PBURST_START_BIT = 21;
+    static const uint32_t DMA_CT_START_BIT = 19;
+    static const uint32_t DMA_DBM_START_BIT = 18;
+    static const uint32_t DMA_PL_START_BIT = 16;
+    static const uint32_t DMA_PINCOS_START_BIT = 15;
+    static const uint32_t DMA_MSIZE_START_BIT = 13;
+    static const uint32_t DMA_PSIZE_START_BIT = 11;
+    static const uint32_t DMA_MINC_START_BIT = 10;
+    static const uint32_t DMA_PINC_START_BIT = 9;
+    static const uint32_t DMA_CIRC_START_BIT = 8;
+    static const uint32_t DMA_DIR_START_BIT = 6;
+    static const uint32_t DMA_PFCTRL_START_BIT = 5;
+    static const uint32_t DMA_FCR_RESERVED_MSK = 
+    (msk_of_ones(32-8)<<8) | (msk_of_ones(1)<<6);
+    static const uint32_t DMA_DIRECT_MODE_BIT = 2;
+    static const uint32_t DMA_FTH_BIT = 0;
+    static const uint32_t DMA_FEIE_BIT = 7;
+
+    BARE_ASSERT(config != NULL);
+    BARE_ASSERT(rcc != NULL);
+
+    DMA_driver_t *driver = DMA_get_instance(instance);
+    BARE_ASSERT(driver != NULL);
+
+    // do clock shit
+    if(instance == DMA_INSTANCE_1){
+        RCC_en_DMA1(rcc);
+    }else if(instance == DMA_INSTANCE_2){
+        RCC_en_DMA2(rcc);
+    }else{
+        // we fucked up bad
+        __BKPT(0);
+    }
+
+    // make sure that the reserved are preserved and everything is 0'd
+    uint32_t DMA_cr = driver->streams[config->stream].CR;
+    DMA_cr &= (
+        msk_of_ones(DMA_CR_RESERVED_FIELD_LEN) << DMA_CR_RESERVED_START_BIT
+        | (1 << DMA_CR_RESERVED1_START_BIT)
+    );
+
+    // write the config to the registers
+    DMA_cr |= ((uint32_t)config->channel << DMA_CHSEL_START_BIT);
+    DMA_cr |= ((uint32_t)config->memory_bust << DMA_MBURST_START_BIT);
+    DMA_cr |= ((uint32_t)config->peripheral_burst << DMA_PBURST_START_BIT);
+    DMA_cr |= ((uint32_t)config->curr_target << DMA_CT_START_BIT);
+    DMA_cr |= ((uint32_t)config->double_buffer_mode << DMA_DBM_START_BIT);
+    DMA_cr |= ((uint32_t)config->priority_level << DMA_PL_START_BIT)
+    DMA_cr |= ((uint32_t)config->peripheral_incrmnt_offset << DMA_PINCOS_START_BIT);
+    DMA_cr |= ((uint32_t)config->memory_data_size << DMA_MSIZE_START_BIT);
+    DMA_cr |= ((uint32_t)config->peripheral_data_size << DMA_PSIZE_START_BIT);
+    DMA_cr |= ((uint32_t)config->mem_incr_mode << DMA_MINC_START_BIT);
+    DMA_cr |= ((uint32_t)config->mem_incr_mode << DMA_PINC_START_BIT);
+    DMA_cr |= ((uint32_t)config->circ_mode << DMA_CIRC_START_BIT);
+    DMA_cr |= ((uint32_t)config->data_direction << DMA_DIR_START_BIT);
+    DMA_cr |= ((uint32_t)config->periph_flow_crtl << DMA_PFCTRL_START_BIT);
+    DMA_cr |= ((uint32_t)config->TC_intrpt_en << DMA_TCIE_BIT);
+    DMA_cr |= ((uint32_t)config->HT_intrpt_en << DMA_HTIE_BIT);
+    DMA_cr |= ((uint32_t)config->TE_intrpt_en << DMA_TEIE_BIT);
+    DMA_cr |= ((uint32_t)config->DME_intrpt_en << DMA_DMEIE_BIT);
+    driver->streams[config->stream].CR = DMA_cr;
+
+    driver->streams[config->stream].NDTR |= (uint32_t)config->no_of_items;
+
+    driver->streams[config->stream].PAR = config->peripheral_addr;
+
+    /**
+        here I am making sure that we don't have a null pointer
+        dereference
+    */
+    BARE_ASSERT(config->mem0_addr != 0);
+    BARE_ASSERT(config->mem1_addr != 0);
+
+    if(config->double_buffer_mode == DMA_DB_DIS){
+        driver->streams[config->stream].PAR = config->mem0_addr;
+    }else{
+        driver->streams[config->stream].PAR = config->mem0_addr;
+        driver->streams[config->stream].PAR = config->mem1_addr;
+    }
+
+    uint32_t dma_sxfcr = driver->streams[config->stream].FCR;
+    dma_sxfcr &= DMA_FCR_RESERVED_MSK;
+    if(config->mode == DMA_MODE_DIRECT){
+        dma_sxfcr |= (config->FIFO_err_intrpt_en<<DMA_DIRECT_MODE_BIT);
+    }
+    else{
+        dma_sxfcr |= (1UL<<DMA_FEIE_BIT);
+        dma_sxfcr |= (config->fifo_threshold<<DMA_FTH_BIT);
+    }
+
+    DMA_en_stream(driver, config->stream);
+    return driver;
 }
