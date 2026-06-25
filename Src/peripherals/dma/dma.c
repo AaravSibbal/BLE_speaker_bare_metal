@@ -284,6 +284,7 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
 
     BARE_ASSERT(config != NULL);
     BARE_ASSERT(rcc != NULL);
+    BARE_ASSERT(config->stream != DMA_BAD_STREAM);
 
     DMA_driver_t *driver = DMA_get_instance(instance);
     BARE_ASSERT(driver != NULL);
@@ -307,7 +308,7 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
 
     // write the config to the registers
     DMA_cr |= ((uint32_t)config->channel << DMA_CHSEL_START_BIT);
-    DMA_cr |= ((uint32_t)config->memory_bust << DMA_MBURST_START_BIT);
+    DMA_cr |= ((uint32_t)config->memory_burst << DMA_MBURST_START_BIT);
     DMA_cr |= ((uint32_t)config->peripheral_burst << DMA_PBURST_START_BIT);
     DMA_cr |= ((uint32_t)config->curr_target << DMA_CT_START_BIT);
     DMA_cr |= ((uint32_t)config->double_buffer_mode << DMA_DBM_START_BIT);

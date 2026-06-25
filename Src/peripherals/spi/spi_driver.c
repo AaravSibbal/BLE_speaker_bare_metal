@@ -1,5 +1,6 @@
 #include "spi_driver.h"
 #include "../../def.h"
+#include "Src/arm/arm.h"
 #include <stddef.h>
 
 struct SPI_driver{
@@ -159,4 +160,43 @@ __INLINE uint32_t SPI_get_SR(SPI_driver_t* self){
 
 __INLINE void SPI_set_DR(SPI_driver_t* self, uint16_t val){
     self->DR = (uint32_t)val;
+}
+
+void SPI_set_DMATX(SPI_driver_t* self, SPI_mode_t mode){
+    static const uint32_t SPI_DMAEN_TX_BIT = 1;
+    if(mode == SPI_EN){
+        bit_band_write((uint32_t)&self->CR2, SPI_DMAEN_TX_BIT, 1);
+    }else if (mode == SPI_DIS) {
+        bit_band_write((uint32_t)&self->CR2, SPI_DMAEN_TX_BIT, 0);
+    }else{
+        // we fucked up bad wrong enum type at the very least
+        __BKPT(0)
+    }
+}
+
+void SPI_set_DMARX(SPI_driver_t* self, SPI_DMA_t mode){
+    static const uint32_t SPI_DMAEN_RX_BIT = 0;
+    if(mode == SPI_EN){
+        bit_band_write((uint32_t)&self->CR2, SPI_DMAEN_RX_BIT, 1);
+    }else if (mode == SPI_DIS) {
+        bit_band_write((uint32_t)&self->CR2, SPI_DMAEN_RX_BIT, 0);
+    }else{
+        // we fucked up bad wrong enum type at the very least
+        __BKPT(0)
+    }
+}
+
+void SPI_set_err_intrpt(SPI_driver_t* self, SPI_mode_t mode){
+    static const uint8_t SPI_ERRIE_BIT = 5; 
+    if(mode = SPI_EN){
+        bit_band_write((uint32_t)&self->CR2, SPI_ERRIE_BIT, 1);
+    }else if(mode == SPI_DIS){
+        bit_band_write((uint32_t)&self->CR2, SPI_ERRIE_BIT, 0);
+    }else{
+        __BKPT(0);
+    }
+}
+
+uint32_t SPI_get_DR_addr(SPI_driver_t* self){
+    return (uint32_t)&self->DR;
 }

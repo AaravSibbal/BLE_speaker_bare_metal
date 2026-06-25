@@ -3,6 +3,8 @@
 #include "../../arm/arm.h"
 #include "../gpio/gpio.h"
 #include "../rcc/rcc.h"
+#include "Src/arm/arm.h"
+#include "Src/peripherals/dma/dma.h"
 #include "spi_driver.h"
 #include "stdint.h"
 
@@ -20,6 +22,8 @@ static const GPIO_AFx_t I2S3_gpio_af = AF6;
 static const GPIO_OTYPER_t I2S_gpio_otype = GPIO_TYPE_PUSH_PULL;
 static const GPIO_PUPDR_t I2S_gpio_pupd = NO_PUPD;
 static const GPIO_OSPEEDR_t I2S_gpio_speed = OSPEED_HIGH;
+
+static volatile uint16_t DMA_mem0_buffer[256] = { 0 }; 
 
 __STATIC_INLINE void i2s_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin, GPIO_AFx_t af_val){
     GPIO_set_alt_func(gpio, pin, af_val);
@@ -79,8 +83,21 @@ __STATIC_INLINE void i2s_en_PLLI2S(RCC_t* rcc){
     }
 }
 
+__STATIC_INLINE DMA_channel_t I2S_get_DMA_stream(I2S_instance_t instance, I2S_mode_t mode){
+    if(instance == I2S_INSTANCE_3 && mode == I2S_MODE_DMA_RX){
+        return DMA_STREAM_0;
+    }else if (instance == I2S_INSTANCE_3 && mode == I2S_MODE_DMA_TX) {
+        return DMA_STREAM_5;
+    }else if(instance == I2S_INSTANCE_2 && mode == I2S_MODE_DMA_RX){
+        return DMA_STREAM_3;
+    }else if(instance == I2S_INSTANCE_2 && mode == I2S_MODE_DMA_TX){
+        return DMA_STREAM_4;
+    }
+    return DMA_BAD_STREAM;
+}
 
-void i2s_init(I2S_instance_t instance, RCC_t* rcc){
+
+void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
     i2s_en_PLLI2S(rcc);
     
     i2s_init_gpio(instance, rcc);
@@ -111,7 +128,50 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc){
     SPI_set_I2S_ckpol(spi_driver, I2S_CKPOL_LOW);
     SPI_set_I2S_data_len(spi_driver, I2S_DATA_LEN_16);
     SPI_set_I2S_chan_len(spi_driver, I2S_CHAN_LEN_16);
+    SPI_set_err_intrpt(spi_driver, SPI_EN);
+
+    if(mode == I2S_MODE_DMA_TX){
+        SPI_set_DMATX(spi_driver, SPI_EN);
+        DMA_config_t dma_config = {
+            .stream = I2S_get_DMA_stream(instance, mode),
+            .channel = DMA_CHANNEL_0,
+            .memory_burst = DMA_INCR_SINGLE,
+            .peripheral_burst = DMA_INCR_SINGLE,
+            .curr_target = DMA_TARGET_MEM_0,
+            .double_buffer_mode = DMA_DB_DIS,
+            .priority_level = DMA_PRIORITY_HIGH,
+            .peripheral_incrmnt_offset = DMA_PINCOS_LINKED_TO_PSIZE,
+            .memory_data_size = DMA_MEM_16_BIT,
+            .peripheral_data_size = DMA_MEM_16_BIT,
+            .mem_incr_mode = DMA_MINC_INCREMENT,
+            .periph_incr_mode = DMA_PINC_FIXED,
+            .circ_mode = DMA_CIRC_EN,
+            .data_direction = DMA_DIR_MEM_TO_PERIPH,
+            .periph_flow_crtl = DMA_CTRL_DMA,
+            .TC_intrpt_en = TRUE,
+            .HT_intrpt_en = TRUE,
+            .TE_intrpt_en = TRUE,
+            .DME_intrpt_en = TRUE,
+            .no_of_items = 256,
+            .peripheral_addr = SPI_get_DR_addr(spi_driver),
+            .mem0_addr = (uint32_t)DMA_mem0_buffer,
+            .mem1_addr = 0,
+            .mode = DMA_MODE_DIRECT,
+            .FIFO_err_intrpt_en = FALSE,
+            .fifo_threshold = DMA_FIFO_FULL // doesn't matter
+        };
+        DMA_driver_t* dma_driver = DMA_init(&dma_config, DMA_INSTANCE_1, rcc);
+
+    }else if(mode == I2S_MODE_DMA_RX){
+        SPI_set_DMARX(spi_driver, SPI_EN);
+        // not implemented the config yet
+        __BKPT(0);
+    }
 
     SPI_en_I2S(spi_driver);
     
+}
+
+SPI3_IRQHandler(){
+    static const 
 }

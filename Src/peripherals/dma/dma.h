@@ -27,7 +27,8 @@ typedef enum DMA_channel{
     DMA_CHANNEL_4 = 0x4,
     DMA_CHANNEL_5 = 0x5,
     DMA_CHANNEL_6 = 0x6,
-    DMA_CHANNEL_7 = 0x7
+    DMA_CHANNEL_7 = 0x7,
+    DMA_BAD_STREAM = 0x8
 } DMA_channel_t;
 
 typedef enum DMA_incr{
@@ -112,7 +113,7 @@ typedef enum DMA_instance{
 typedef struct DMA_config{
     DMA_stream_id_t stream;
     DMA_channel_t channel;
-    DMA_incr_t memory_bust;
+    DMA_incr_t memory_burst;
     DMA_incr_t peripheral_burst;
     DMA_target_t curr_target;
     DMA_db_mode_t double_buffer_mode;

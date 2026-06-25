@@ -218,7 +218,7 @@ g_pfnVectors:
   .word	OTG_HS_EP1_IN_IRQHandler     			/* USB On The Go HS End Point 1 In global interrupt                   */
   .word	OTG_HS_WKUP_IRQHandler       			/* USB On The Go HS Wakeup through EXTI interrupt                     */
   .word	OTG_HS_IRQHandler            			/* USB On The Go HS global interrupt                                  */
-  .word	DCMI_IRQHandler              			/* DCMI global interrupt                                              */
+  .word	DCMI_IRQHandler             			/* DCMI global interrupt                                              */
   .word	CRYP_IRQHandler              			/* CRYP crypto global interrupt                                       */
   .word	HASH_RNG_IRQHandler          			/* Hash and Rng global interrupt                                      */
   .word	FPU_IRQHandler               			/* FPU interrupt                                                      */

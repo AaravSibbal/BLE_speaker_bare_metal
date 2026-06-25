@@ -48,6 +48,11 @@ typedef enum I2S_ckpol{
     I2S_CKPOL_HIGH = 0x1
 }I2S_ckpol_t;
 
+typedef enum SPI_mode{
+    SPI_EN = 0,
+    SPI_DIS = 1
+}SPI_mode_t;
+
 typedef struct SPI_driver SPI_driver_t;
 
 SPI_driver_t* SPI_get_instance(SPI_instance_t instance);
@@ -69,6 +74,10 @@ void SPI_set_I2S_chan_len(SPI_driver_t* self, I2S_chan_len_t len);
 void SPI_set_I2S_ckpol(SPI_driver_t* self, I2S_ckpol_t val);
 uint32_t SPI_get_SR(SPI_driver_t* self);
 void SPI_set_DR(SPI_driver_t* self, uint16_t val);
+void SPI_set_DMATX(SPI_driver_t* self, SPI_mode_t mode);
+void SPI_set_DMARX(SPI_driver_t* self, SPI_mode_t mode);
+void SPI_set_err_intrpt(SPI_driver_t* self, SPI_mode_t mode);
+uint32_t SPI_get_DR_addr(SPI_driver_t* self);
 
 
 #endif
