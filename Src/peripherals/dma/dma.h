@@ -133,7 +133,7 @@ typedef struct DMA_config{
     uint32_t peripheral_addr;
     uint32_t mem0_addr;
     uint32_t mem1_addr;
-    dma_mode_t mode;
+    DMA_mode_t mode;
     __bool FIFO_err_intrpt_en;
     DMA_FIFO_threshold_t fifo_threshold;
 }DMA_config_t;

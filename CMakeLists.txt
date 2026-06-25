@@ -44,6 +44,7 @@ set(cpu_PARAMS
 set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/dbgmcu/dbgmcu.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/demcr/demcr.c   
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/dma/dma.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/itm/itm.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/print/printf.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/exti/exti.c   
