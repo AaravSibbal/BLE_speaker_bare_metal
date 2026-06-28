@@ -162,6 +162,10 @@ __INLINE void SPI_set_DR(SPI_driver_t* self, uint16_t val){
     self->DR = (uint32_t)val;
 }
 
+__INLINE uint32_t SPI_get_DR(SPI_driver_t* self){
+    return self->DR;
+}
+
 void SPI_set_DMATX(SPI_driver_t* self, SPI_mode_t mode){
     static const uint32_t SPI_DMAEN_TX_BIT = 1;
     if(mode == SPI_EN){

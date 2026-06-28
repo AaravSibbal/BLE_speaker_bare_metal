@@ -361,3 +361,4 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
     DMA_en_stream(driver, config->stream);
     return driver;
 }
+

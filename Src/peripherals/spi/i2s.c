@@ -25,6 +25,10 @@ static const GPIO_OSPEEDR_t I2S_gpio_speed = OSPEED_HIGH;
 
 static volatile uint16_t DMA_mem0_buffer[256] = { 0 }; 
 
+static volatile I2S_handle_t i2s2_handle;
+static volatile I2S_handle_t i2s3_handle;
+
+
 __STATIC_INLINE void i2s_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin, GPIO_AFx_t af_val){
     GPIO_set_alt_func(gpio, pin, af_val);
     GPIO_set_otyper(gpio, pin, I2S_gpio_otype);
@@ -172,6 +176,40 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
     
 }
 
-SPI3_IRQHandler(){
-    static const 
+__INLINE static void I2S_error_handler(I2S_handle_t* handle){
+    static const uint8_t OVR_BIT = 6;
+    static const uint32_t OVR_MSK = (1UL<<OVR_BIT);
+    static const uint8_t UDR_BIT = 5;
+    static const uint32_t UDR_MSK = (1UL<<UDR_BIT);
+    static const uint8_t FRE_BIT = 8;
+    static const uint32_t FRE_MSK = (1UL<<FRE_BIT);
+    SPI_driver_t* spi_driver = SPI_get_instance(SPI_INSTANCE_3);
+    uint32_t status_register = SPI_get_SR(spi_driver);
+    uint32_t volatile dummy_read;
+    if(status_register & OVR_MSK){
+        // clearing ovr sequence
+        (void)dummy_read = SPI_get_DR(spi_driver);
+        (void)dummy_read = SPI_get_SR(spi_driver);
+
+        handle->error_state = I2S_ERROR_OVR;
+    }
+    else if(status_register & UDR_MSK){
+        // clearing usr sequence
+        (void)dummy_read = SPI_get_SR(spi_driver);
+
+        handle->error_state = I2S_ERROR_UDR;
+    } 
+    else if(status_register & FRE_MSK){
+        // clearing fre sequence
+        (void)dummy_read = SPI_get_SR(spi_driver);
+
+        handle->error_state = I2S_ERROR_FRE;
+    }
+    else{
+        handle->error_state = I2S_ERROR_NONE;
+    }
+}
+
+void SPI3_IRQHandler(void){
+    I2S_error_handler(&i2s3_handle);
 }

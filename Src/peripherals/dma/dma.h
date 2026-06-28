@@ -176,59 +176,5 @@ void DMA_dis_stream(DMA_driver_t* self, DMA_stream_id_t stream_id);
 
 DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance,RCC_t* rcc);
 
-// void DMA_set_chsel(DMA_driver_t* self, DMA_stream_id_t stream_id, 
-// DMA_channel_t channel);
-
-// void DMA_set_mbrust(DMA_driver_t* self, DMA_stream_id_t stream_id, 
-// DMA_incr_t incr);
-
-// void DMA_set_pburst(DMA_driver_t* self, DMA_stream_id_t stream_id, 
-// DMA_incr_t incr);
-
-// void DMA_set_curr_target(DMA_driver_t* self, DMA_stream_id_t stream_id, 
-// DMA_target_t target);
-
-// void DMA_set_dbm(DMA_driver_t* self, DMA_stream_id_t stream_id,
-// DMA_db_mode_t mode);
-
-// void DMA_set_priority(DMA_driver_t* self, DMA_stream_id_t stream_id,
-// DMA_priority_t priority);
-
-// void DMA_set_pincos(DMA_driver_t* self, DMA_stream_id_t stream_id,
-// DMA_pincos_t offset_size);
-
-// void DMA_set_msize(DMA_driver_t* self, DMA_stream_id_t stream_id,
-// DMA_mem_size_t mem_size);
-
-// void DMA_set_psize(DMA_driver_t* self, DMA_stream_id_t stream_id,
-// DMA_mem_size_t mem_size);
-
-// void DMA_set_minc(DMA_driver_t* self, DMA_stream_id_t stream_id,
-// DMA_minc_t mem_inc);
-
-// void DMA_set_pinc(DMA_driver_t* self, DMA_stream_id_t stream_id, 
-// DMA_pinc_t periph_inc);
-
-// void DMA_set_circ(DMA_driver_t* seld, DMA_stream_id_t stream_id, 
-// DMA_circ_mode_t circ_mode);
-
-// void DMA_set_dir(DMA_driver_t* seld, DMA_stream_id_t stream_id, 
-// DMA_dir_t dir);
-
-// void DMA_set_pfctrl(DMA_driver_t* seld, DMA_stream_id_t stream_id, 
-// DMA_pfctrl_t flow);
-
-/**
-okay here is the idea that I have at the moment, 
-for dma's SxCR 
-I can create helper functions for things that I would need to change
-but I think because all the config would have to be in a state where
-en bit = 0
-I think a better way to approach this would be to take that setting
-set it all in once, 
-and then do a final write, 
-this can make this so much faster and efficient than what I have planned
-*/
-
 
 #endif

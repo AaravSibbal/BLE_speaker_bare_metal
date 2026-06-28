@@ -5,6 +5,7 @@
 #include "Src/def.h"
 #include "Src/peripherals/gpio/gpio.h"
 #include <stdint.h>
+#include <stddef.h>
 
 
 static const uint8_t DAC_I2C_addr = 0x94;
