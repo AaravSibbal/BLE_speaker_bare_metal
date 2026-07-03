@@ -27,8 +27,8 @@ typedef struct I2S_handle{
 
 }I2S_handle_t;
 
-extern I2S_handle_t i2s2_handle;
-extern I2S_handle_t i2s3_handle;
+// extern I2S_handle_t i2s2_handle;
+// extern I2S_handle_t i2s3_handle;
 
 void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode);
 

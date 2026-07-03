@@ -7,7 +7,6 @@
 
 typedef struct DMA_driver DMA_driver_t;
 
-
 typedef enum DMA_stream_id{
     DMA_STREAM_0 = 0,
     DMA_STREAM_1 = 1,
@@ -16,7 +15,8 @@ typedef enum DMA_stream_id{
     DMA_STREAM_4 = 4,
     DMA_STREAM_5 = 5,
     DMA_STREAM_6 = 6,
-    DMA_STREAM_7 = 7
+    DMA_STREAM_7 = 7,
+    DMA_BAD_STREAM = 0x8
 }DMA_stream_id_t;
 
 typedef enum DMA_channel{
@@ -28,7 +28,6 @@ typedef enum DMA_channel{
     DMA_CHANNEL_5 = 0x5,
     DMA_CHANNEL_6 = 0x6,
     DMA_CHANNEL_7 = 0x7,
-    DMA_BAD_STREAM = 0x8
 } DMA_channel_t;
 
 typedef enum DMA_incr{
@@ -139,42 +138,55 @@ typedef struct DMA_config{
     DMA_FIFO_threshold_t fifo_threshold;
 }DMA_config_t;
 
-/**
-    tc: Transfer complete flag
-    ht: Half transfer flag
-    te: Transfer error flag
-    dme: direct mode error flag
-    fe: FIFO error flag
-    clear flags are all handled in IFCR
+typedef enum DMA_error{
+    DMA_ERROR_NONE = 0,
+    DMA_ERROR_TRANSFER = 1,
+    DMA_ERROR_FIFO = 2,
+    DMA_ERROR_DIRECT_MODE = 3
+}DMA_error_t;
 
-*/
+typedef enum DMA_state{
+    DMA_STATE_RESET = 0,
+    DMA_STATE_READY = 1,
+    DMA_STATE_BUSY = 2,
+    DMA_STATE_READY = 3,
+    DMA_STATE_ERROR = 4
+}DMA_state_t;
 
-void DMA_clear_tc(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_clear_ht(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_clear_te(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_clear_dme(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_clear_fe(DMA_driver_t* self, DMA_stream_id_t stream_id);
 
-uint32_t DMA_get_tc(DMA_driver_t* self, DMA_stream_id_t stream_id);
-uint32_t DMA_get_ht(DMA_driver_t* self, DMA_stream_id_t stream_id);
-uint32_t DMA_get_te(DMA_driver_t* self, DMA_stream_id_t stream_id);
-uint32_t DMA_get_dme(DMA_driver_t* self, DMA_stream_id_t stream_id);
-uint32_t DMA_get_fe(DMA_driver_t* self, DMA_stream_id_t stream_id);
+DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc);
 
-void DMA_en_TC_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_en_HT_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_en_TE_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_en_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id);
+void DMA1_Stream1_IRQHandler(void);
+void DMA1_Stream2_IRQHandler(void);
+void DMA1_Stream3_IRQHandler(void);
+void DMA1_Stream4_IRQHandler(void);
+void DMA1_Stream5_IRQHandler(void);
+void DMA1_Stream6_IRQHandler(void);
 
-void DMA_dis_TC_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_dis_HT_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_dis_TE_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_dis_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id);
 
-void DMA_en_stream(DMA_driver_t* self, DMA_stream_id_t stream_id);
-void DMA_dis_stream(DMA_driver_t* self, DMA_stream_id_t stream_id);
+typedef struct DMA_handle DMA_handle_t;
 
-DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance,RCC_t* rcc);
+typedef void (* DMA_callback_t)(DMA_handle_t* handle);
+struct DMA_handle{
+    DMA_driver_t* driver;
+    volatile DMA_error_t error_state;
+    volatile DMA_state_t transfer_state;
+    DMA_stream_id_t stream;
+    DMA_callback_t HC_callback;
+    DMA_callback_t TC_callback;
+    DMA_callback_t error_callback;
+    void *user_data;
+};
 
+typedef struct DMA_hndl_config{
+    DMA_driver_t* driver;
+    DMA_stream_id_t stream;
+    DMA_callback_t HC_callback;
+    DMA_callback_t TC_callback;
+    DMA_callback_t error_callback;
+    void *user_data
+}DMA_hndl_config_t;
+
+DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config);
 
 #endif

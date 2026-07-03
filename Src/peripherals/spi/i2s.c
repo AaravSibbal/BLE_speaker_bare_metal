@@ -25,8 +25,8 @@ static const GPIO_OSPEEDR_t I2S_gpio_speed = OSPEED_HIGH;
 
 static volatile uint16_t DMA_mem0_buffer[256] = { 0 }; 
 
-static volatile I2S_handle_t i2s2_handle;
-static volatile I2S_handle_t i2s3_handle;
+static volatile I2S_handle_t i2s2_handle = { 0 };
+static volatile I2S_handle_t i2s3_handle = { 0 };
 
 
 __STATIC_INLINE void i2s_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin, GPIO_AFx_t af_val){
@@ -87,7 +87,7 @@ __STATIC_INLINE void i2s_en_PLLI2S(RCC_t* rcc){
     }
 }
 
-__STATIC_INLINE DMA_channel_t I2S_get_DMA_stream(I2S_instance_t instance, I2S_mode_t mode){
+__STATIC_INLINE DMA_stream_id_t I2S_get_DMA_stream(I2S_instance_t instance, I2S_mode_t mode){
     if(instance == I2S_INSTANCE_3 && mode == I2S_MODE_DMA_RX){
         return DMA_STREAM_0;
     }else if (instance == I2S_INSTANCE_3 && mode == I2S_MODE_DMA_TX) {
@@ -126,7 +126,7 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
     SPI_set_I2SDIV(spi_driver, I2SDIV_48K);
     SPI_set_ODD_bit(spi_driver);
     SPI_en_MCK(spi_driver);
-    SPI_set_mode(spi_driver, SPI_I2S_MODE);
+    SPI_set_proto(spi_driver, SPI_I2S_MODE);
     SPI_set_I2S_std(spi_driver, I2S_PHILLIPS);
     SPI_set_I2S_conf(spi_driver, I2S_MASTER_TRANSMIT);
     SPI_set_I2S_ckpol(spi_driver, I2S_CKPOL_LOW);
@@ -164,7 +164,7 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
             .FIFO_err_intrpt_en = FALSE,
             .fifo_threshold = DMA_FIFO_FULL // doesn't matter
         };
-        DMA_driver_t* dma_driver = DMA_init(&dma_config, DMA_INSTANCE_1, rcc);
+        DMA_init(&dma_config, DMA_INSTANCE_1, rcc);
 
     }else if(mode == I2S_MODE_DMA_RX){
         SPI_set_DMARX(spi_driver, SPI_EN);
@@ -176,7 +176,7 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
     
 }
 
-__INLINE static void I2S_error_handler(I2S_handle_t* handle){
+__INLINE static void I2S_error_handler(volatile I2S_handle_t* handle){
     static const uint8_t OVR_BIT = 6;
     static const uint32_t OVR_MSK = (1UL<<OVR_BIT);
     static const uint8_t UDR_BIT = 5;
@@ -188,26 +188,27 @@ __INLINE static void I2S_error_handler(I2S_handle_t* handle){
     uint32_t volatile dummy_read;
     if(status_register & OVR_MSK){
         // clearing ovr sequence
-        (void)dummy_read = SPI_get_DR(spi_driver);
-        (void)dummy_read = SPI_get_SR(spi_driver);
+        dummy_read = SPI_get_DR(spi_driver);
+        dummy_read = SPI_get_SR(spi_driver);
 
         handle->error_state = I2S_ERROR_OVR;
     }
     else if(status_register & UDR_MSK){
         // clearing usr sequence
-        (void)dummy_read = SPI_get_SR(spi_driver);
+        dummy_read = SPI_get_SR(spi_driver);
 
         handle->error_state = I2S_ERROR_UDR;
     } 
     else if(status_register & FRE_MSK){
         // clearing fre sequence
-        (void)dummy_read = SPI_get_SR(spi_driver);
+        dummy_read = SPI_get_SR(spi_driver);
 
         handle->error_state = I2S_ERROR_FRE;
     }
     else{
         handle->error_state = I2S_ERROR_NONE;
     }
+    (void)dummy_read;
 }
 
 void SPI3_IRQHandler(void){

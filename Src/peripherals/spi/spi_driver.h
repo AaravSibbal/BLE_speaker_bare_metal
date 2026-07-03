@@ -13,10 +13,10 @@ typedef enum SPI_instance{
     SPI_INSTANCE_4
 }SPI_instance_t;
 
-typedef enum SPI_mode{
+typedef enum SPI_proto{
     SPI_SPI_MODE = 0,
     SPI_I2S_MODE
-}SPI_mode_t;
+}SPI_proto_t;
 
 typedef enum I2S_conf{
     I2S_SLAVE_TRANSMIT = 0x0,
@@ -64,7 +64,7 @@ void SPI_reset_ODD_bit(SPI_driver_t* self);
     val can't be 0 or 1 because division
 */
 __bool SPI_set_I2SDIV(SPI_driver_t* self, uint8_t val);
-void SPI_set_mode(SPI_driver_t* self, SPI_mode_t mode);
+void SPI_set_proto(SPI_driver_t* self, SPI_proto_t proto);
 void SPI_en_I2S(SPI_driver_t* self);
 void SPI_dis_I2S(SPI_driver_t* self);
 void SPI_set_I2S_conf(SPI_driver_t* self, I2S_conf_t conf);

@@ -32,6 +32,14 @@ typedef enum intrpt_reg{
 #define DMA1_BASE_ADDR (0x40026000)
 #define DMA2_BASE_ADDR (0x40026400)
 
+static volatile DMA_handle_t dma0_handle;
+static volatile DMA_handle_t dma1_handle;
+static volatile DMA_handle_t dma2_handle;
+static volatile DMA_handle_t dma3_handle;
+static volatile DMA_handle_t dma4_handle;
+static volatile DMA_handle_t dma5_handle;
+static volatile DMA_handle_t dma6_handle;
+
 __STATIC_INLINE uint32_t DMA_get_intrpt_bit(DMA_stream_id_t stream_id, intrpt_reg_t reg){
     uint32_t some = stream_id%4;
     switch(some){
@@ -51,7 +59,7 @@ __STATIC_INLINE uint32_t DMA_get_intrpt_bit(DMA_stream_id_t stream_id, intrpt_re
     return 0;
 }
 
-__INLINE void DMA_clear_tc(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_clear_tc(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -60,7 +68,7 @@ __INLINE void DMA_clear_tc(DMA_driver_t* self, DMA_stream_id_t stream_id){
     self->IFCR[ifcr_idx] = (1UL<<clear_bit);
 }
 
-__INLINE void DMA_clear_ht(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_clear_ht(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -69,7 +77,7 @@ __INLINE void DMA_clear_ht(DMA_driver_t* self, DMA_stream_id_t stream_id){
     self->IFCR[ifcr_idx] = (1UL<<clear_bit);   
 }
 
-__INLINE void DMA_clear_te(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_clear_te(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -78,7 +86,7 @@ __INLINE void DMA_clear_te(DMA_driver_t* self, DMA_stream_id_t stream_id){
     self->IFCR[ifcr_idx] = (1UL<<clear_bit);   
 }
 
-__INLINE void DMA_clear_dme(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_clear_dme(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -87,7 +95,7 @@ __INLINE void DMA_clear_dme(DMA_driver_t* self, DMA_stream_id_t stream_id){
     self->IFCR[ifcr_idx] = (1UL<<clear_bit);   
 }
 
-__INLINE void DMA_clear_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_clear_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -96,7 +104,7 @@ __INLINE void DMA_clear_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
     self->IFCR[ifcr_idx] = (1UL<<clear_bit);   
 }
 
-__INLINE uint32_t DMA_get_tc(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE uint8_t DMA_get_tc(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -109,7 +117,7 @@ __INLINE uint32_t DMA_get_tc(DMA_driver_t* self, DMA_stream_id_t stream_id){
     return 0;
 }
 
-__INLINE uint32_t DMA_get_ht(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE uint8_t DMA_get_ht(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -121,7 +129,7 @@ __INLINE uint32_t DMA_get_ht(DMA_driver_t* self, DMA_stream_id_t stream_id){
     }
     return 0;
 }
-__INLINE uint32_t DMA_get_te(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE uint8_t DMA_get_te(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -133,7 +141,7 @@ __INLINE uint32_t DMA_get_te(DMA_driver_t* self, DMA_stream_id_t stream_id){
     }
     return 0;
 }
-__INLINE uint32_t DMA_get_dme(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE uint8_t DMA_get_dme(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -145,7 +153,7 @@ __INLINE uint32_t DMA_get_dme(DMA_driver_t* self, DMA_stream_id_t stream_id){
     }
     return 0;
 }
-__INLINE uint32_t DMA_get_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE uint8_t DMA_get_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
     uint32_t ifcr_idx = stream_id/4;
     uint32_t clear_bit = DMA_get_intrpt_bit(
         stream_id, 
@@ -160,7 +168,7 @@ __INLINE uint32_t DMA_get_fe(DMA_driver_t* self, DMA_stream_id_t stream_id){
 
 #define DMA_TCIE_BIT 4UL
 
-__INLINE void DMA_en_TC_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_en_TC_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
     bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_TCIE_BIT, 
@@ -170,7 +178,7 @@ __INLINE void DMA_en_TC_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
 
 #define DMA_HTIE_BIT 3UL
 
-__INLINE void DMA_en_HT_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_en_HT_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
      bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_HTIE_BIT, 
@@ -180,7 +188,7 @@ __INLINE void DMA_en_HT_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
 
 #define DMA_TEIE_BIT 2UL
 
-__INLINE void DMA_en_TE_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_en_TE_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
      bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_TEIE_BIT, 
@@ -190,7 +198,7 @@ __INLINE void DMA_en_TE_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
 
 #define DMA_DMEIE_BIT 1UL
 
-__INLINE void DMA_en_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_en_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
      bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_DMEIE_BIT, 
@@ -199,28 +207,28 @@ __INLINE void DMA_en_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
 }
 
 
-__INLINE void DMA_dis_TC_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_dis_TC_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
      bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_DMEIE_BIT, 
         0
     );   
 }
-__INLINE void DMA_dis_HT_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_dis_HT_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
      bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_DMEIE_BIT, 
         0
     );   
 }
-__INLINE void DMA_dis_TE_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_dis_TE_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
      bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_DMEIE_BIT, 
         0
     );   
 }
-__INLINE void DMA_dis_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_dis_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
      bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_DMEIE_BIT, 
@@ -230,7 +238,7 @@ __INLINE void DMA_dis_DME_intpt(DMA_driver_t* self, DMA_stream_id_t stream_id){
 
 #define DMA_EN_BIT 0UL
 
-__INLINE void DMA_en_stream(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_en_stream(DMA_driver_t* self, DMA_stream_id_t stream_id){
     bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_EN_BIT, 
@@ -238,7 +246,7 @@ __INLINE void DMA_en_stream(DMA_driver_t* self, DMA_stream_id_t stream_id){
     );      
 }
 
-__INLINE void DMA_dis_stream(DMA_driver_t* self, DMA_stream_id_t stream_id){
+__STATIC_INLINE void DMA_dis_stream(DMA_driver_t* self, DMA_stream_id_t stream_id){
      bit_band_write(
         (uint32_t)&self->streams[stream_id].CR,
         DMA_EN_BIT, 
@@ -257,6 +265,11 @@ __STATIC_INLINE DMA_driver_t* DMA_get_instance(DMA_instance_t instance){
     }
 }
 
+static const uint8_t DMA_CIRC_START_BIT = 8;
+__STATIC_INLINE uint8_t DMA_get_circ_mode(DMA_driver_t* self, DMA_stream_id_t stream){
+    return ((self->streams[stream].CR >> circ_mode_bit) & (0x1UL));
+}
+
 
 DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc){
     static const uint32_t DMA_CR_RESERVED_START_BIT = 28;
@@ -273,7 +286,6 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
     static const uint32_t DMA_PSIZE_START_BIT = 11;
     static const uint32_t DMA_MINC_START_BIT = 10;
     static const uint32_t DMA_PINC_START_BIT = 9;
-    static const uint32_t DMA_CIRC_START_BIT = 8;
     static const uint32_t DMA_DIR_START_BIT = 6;
     static const uint32_t DMA_PFCTRL_START_BIT = 5;
     static const uint32_t DMA_FCR_RESERVED_MSK = 
@@ -362,3 +374,129 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
     return driver;
 }
 
+DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config){
+    DMA_handle_t* handle_ptr = NULL;
+
+    switch(config->stream){
+        case DMA_STREAM_0:
+            handle_ptr = &dma0_handle;
+            break;
+        case DMA_STREAM_1:
+            handle_ptr = &dma1_handle;
+            break;
+        case DMA_STREAM_2:
+            handle_ptr = &dma2_handle;
+            break;
+        case DMA_STREAM_3:
+            handle_ptr = &dma3_handle;
+            break;
+        case DMA_CHANNEL_4:
+            handle_ptr = &dma4_handle;
+            break;
+        case DMA_STREAM_5:
+            handle_ptr = &dma5_handle;
+            break;
+        case DMA_STREAM_6:
+            handle_ptr = &dma6_handle;
+            break;
+        case DMA_STREAM_7:
+            __BKPT(0);
+            break;
+        default:
+            __BKPT(0);
+            break;
+    }
+
+    BARE_ASSERT(config->driver != NULL);
+    BARE_ASSERT(config->HC_callback != NULL);
+    BARE_ASSERT(config->TC_callback != NULL);
+    BARE_ASSERT(config->error_callback != NULL);
+    BARE_ASSERT(config->user_data != NULL);
+
+    handle_ptr->driver = config->driver;
+    handle_ptr->HC_callback = config->HC_callback;
+    handle_ptr->TC_callback = config->TC_callback;
+    handle_ptr->error_callback = config->error_callback;
+    handle_ptr->user_data = config->user_data;
+    handle_ptr->error_state = DMA_ERROR_NONE;
+    handle_ptr->transfer_state = DMA_STATE_READY;
+
+    return handle_ptr;
+}
+
+__STATIC_INLINE void dma_isr_handler(volatile DMA_handle_t* handle){
+    if(DMA_get_te(handle->driver, handle->stream) == 1){
+        DMA_clear_te(handle->driver, handle->stream);
+        handle->error_state = DMA_ERROR_TRANSFER;
+        handle->transfer_state = DMA_STATE_ERROR;
+        if(handle->error_callback != NULL){
+            handle->error_callback(handle);
+        }
+        return;
+    }
+
+    if(DMA_get_fe(handle->driver, handle->stream) == 1){
+        DMA_clear_fe(handle->driver, handle->stream);
+        handle->error_state = DMA_ERROR_FIFO;
+        handle->transfer_state = DMA_STATE_ERROR;
+        if(handle->error_callback != NULL){
+            handle->error_callback(handle);
+        }
+        return;
+    }
+    
+    if(DMA_get_dme(handle->driver, handle->stream) == 1){
+        DMA_clear_dme(handle->driver, handle->stream);
+        handle->error_state = DMA_ERROR_DIRECT_MODE;
+        handle->transfer_state = DMA_STATE_ERROR;
+        if(handle->error_callback != NULL){
+            handle->error_callback(handle);
+        }
+        return;
+    }
+
+    if(DMA_get_ht(handle->driver, handle->stream) == 1){
+        DMA_clear_ht(handle->driver, handle->stream);
+        handle->error_state = DMA_ERROR_NONE;
+        handle->transfer_state = DMA_STATE_BUSY;
+        if(handle->HC_callback != NULL){
+            handle->HC_callback(handle);
+        }
+    }
+    
+    if(DMA_get_tc(handle->driver, handle->stream) == 1){
+        DMA_clear_tc(handle->driver, handle->stream);
+        handle->error_state = DMA_ERROR_NONE;
+        if(DMA_get_circ_mode(handle->driver, handle->stream) == 0){
+            handle->transfer_state = DMA_STATE_READY;
+        }else{
+            handle->transfer_state = DMA_STATE_BUSY;
+        }
+
+        if(handle->TC_callback != NULL){
+            handle->TC_callback(handle);    
+        }
+    }
+}
+
+void DMA1_Stream0_IRQHandler(void){
+    dma_isr_handler(&dma0_handle);
+}
+void DMA1_Stream1_IRQHandler(void){
+    dma_isr_handler(&dma1_handle);
+}
+void DMA1_Stream2_IRQHandler(void){
+    dma_isr_handler(&dma2_handle);
+}
+void DMA1_Stream3_IRQHandler(void){
+    dma_isr_handler(&dma3_handle);
+}
+void DMA1_Stream4_IRQHandler(void){
+    dma_isr_handler(&dma4_handle);
+}
+void DMA1_Stream5_IRQHandler(void){
+    dma_isr_handler(&dma5_handle);
+}
+void DMA1_Stream6_IRQHandler(void){
+    dma_isr_handler(&dma6_handle);
+}

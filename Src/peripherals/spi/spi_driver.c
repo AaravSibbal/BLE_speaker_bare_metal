@@ -73,7 +73,7 @@ __bool SPI_set_I2SDIV(SPI_driver_t* self, uint8_t val){
 
 #define SPI_I2SMOD_BIT 11UL
 
-__INLINE void SPI_set_mode(SPI_driver_t* self, SPI_mode_t mode){
+__INLINE void SPI_set_proto(SPI_driver_t* self, SPI_proto_t mode){
     uint32_t addr = (uint32_t)&self->SPI_I2SCFGR;
     if(mode == SPI_SPI_MODE){
         bit_band_write(addr, SPI_I2SMOD_BIT, 0);
@@ -174,11 +174,11 @@ void SPI_set_DMATX(SPI_driver_t* self, SPI_mode_t mode){
         bit_band_write((uint32_t)&self->CR2, SPI_DMAEN_TX_BIT, 0);
     }else{
         // we fucked up bad wrong enum type at the very least
-        __BKPT(0)
+        __BKPT(0);
     }
 }
 
-void SPI_set_DMARX(SPI_driver_t* self, SPI_DMA_t mode){
+void SPI_set_DMARX(SPI_driver_t* self, SPI_mode_t mode){
     static const uint32_t SPI_DMAEN_RX_BIT = 0;
     if(mode == SPI_EN){
         bit_band_write((uint32_t)&self->CR2, SPI_DMAEN_RX_BIT, 1);
@@ -186,13 +186,13 @@ void SPI_set_DMARX(SPI_driver_t* self, SPI_DMA_t mode){
         bit_band_write((uint32_t)&self->CR2, SPI_DMAEN_RX_BIT, 0);
     }else{
         // we fucked up bad wrong enum type at the very least
-        __BKPT(0)
+        __BKPT(0);
     }
 }
 
 void SPI_set_err_intrpt(SPI_driver_t* self, SPI_mode_t mode){
     static const uint8_t SPI_ERRIE_BIT = 5; 
-    if(mode = SPI_EN){
+    if(mode == SPI_EN){
         bit_band_write((uint32_t)&self->CR2, SPI_ERRIE_BIT, 1);
     }else if(mode == SPI_DIS){
         bit_band_write((uint32_t)&self->CR2, SPI_ERRIE_BIT, 0);
