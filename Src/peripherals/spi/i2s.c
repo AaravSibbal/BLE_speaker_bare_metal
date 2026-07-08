@@ -7,6 +7,7 @@
 #include "Src/peripherals/dma/dma.h"
 #include "spi_driver.h"
 #include "stdint.h"
+#include <cstddef>
 
 static const GPIO_port_t I2S3_MCK_GPIO_PORT = GPIO_PORT_C;
 static const GPIO_Pin_t I2S3_MCK_GPIO_PIN = GPIO_PIN_7;
@@ -23,10 +24,14 @@ static const GPIO_OTYPER_t I2S_gpio_otype = GPIO_TYPE_PUSH_PULL;
 static const GPIO_PUPDR_t I2S_gpio_pupd = NO_PUPD;
 static const GPIO_OSPEEDR_t I2S_gpio_speed = OSPEED_HIGH;
 
-static volatile uint16_t DMA_mem0_buffer[256] = { 0 }; 
+static const DMA_buff_size_t DMA_BUFFER_SIZE = DMA_BUFF_SIZE_4096;
+static volatile uint16_t DMA_mem0_buffer[(1UL<<DMA_BUFFER_SIZE)] = { 0 }; 
 
 static volatile I2S_handle_t i2s2_handle = { 0 };
 static volatile I2S_handle_t i2s3_handle = { 0 };
+
+I2S_DMA_data_t i2s2_dma_data;
+I2S_DMA_data_t i2s3_dma_data;
 
 
 __STATIC_INLINE void i2s_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin, GPIO_AFx_t af_val){
@@ -85,6 +90,19 @@ __STATIC_INLINE void i2s_en_PLLI2S(RCC_t* rcc){
     while(RCC_get_PLLI2S_ready(rcc) == 0){
 
     }
+}
+
+void I2S_DMA_TX_HC_callback(DMA_handle_t* handle){
+    // TODO: Complete this function
+
+}
+
+void I2S_DMA_TX_TC_callback(DMA_handle_t* handle){
+    // TODO: Complete this function
+}
+
+void I2S_DMA_TX_error_callback(DMA_handle_t* handle){
+    // TODO: Complete this function
 }
 
 __STATIC_INLINE DMA_stream_id_t I2S_get_DMA_stream(I2S_instance_t instance, I2S_mode_t mode){
@@ -156,7 +174,7 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
             .HT_intrpt_en = TRUE,
             .TE_intrpt_en = TRUE,
             .DME_intrpt_en = TRUE,
-            .no_of_items = 256,
+            .no_of_items = DMA_BUFFER_SIZE,
             .peripheral_addr = SPI_get_DR_addr(spi_driver),
             .mem0_addr = (uint32_t)DMA_mem0_buffer,
             .mem1_addr = 0,
@@ -164,7 +182,30 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
             .FIFO_err_intrpt_en = FALSE,
             .fifo_threshold = DMA_FIFO_FULL // doesn't matter
         };
-        DMA_init(&dma_config, DMA_INSTANCE_1, rcc);
+
+        DMA_driver_t* dma_driver = DMA_init(
+            &dma_config,
+            DMA_INSTANCE_1, 
+            rcc
+        );
+
+        DMA_hndl_config_t dma_handle_config = {
+            .driver = dma_driver,
+            .stream = I2S_get_DMA_stream(instance, mode),
+            .HC_callback = &I2S_DMA_TX_HC_callback,
+            .TC_callback = &I2S_DMA_TX_TC_callback,
+            .error_callback = &I2S_DMA_TX_error_callback,
+            .user_data = i2s_init_dma_data(
+                instance, 
+                DMA_BUFFER_SIZE,
+                DMA_mem0_buffer,
+                // TODO: FINISH THE INIT SEQUENCE
+                )
+        };
+
+
+        DMA_handle_t* dma_handle = DMA_handle_init(&dma_handle_config);
+        (void)dma_handle;
 
     }else if(mode == I2S_MODE_DMA_RX){
         SPI_set_DMARX(spi_driver, SPI_EN);
@@ -173,8 +214,33 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
     }
 
     SPI_en_I2S(spi_driver);
-    
 }
+
+
+I2S_DMA_data_t* i2s_init_dma_data(I2S_instance_t i2s_instance,  
+DMA_buff_size_t buff_size, const uint16_t* source, uint16_t* dma_dest){
+    I2S_DMA_data_t* dma_data_ptr = NULL;
+    switch(i2s_instance){
+        case I2S_INSTANCE_2:
+            dma_data_ptr = &i2s2_dma_data;   
+            break;
+        case I2S_INSTANCE_3:
+            dma_data_ptr = &i2s3_dma_data;
+            break;
+        default:
+            // don't fuck around with my enums
+            __BKPT(0);    
+    }
+
+    dma_data_ptr->total_source_len = (1UL<<(uint32_t)buff_size);
+    dma_data_ptr->half_buff_size = (1UL<<((uint32_t)buff_size-1));
+    dma_data_ptr->current_read_offset = 0;
+    dma_data_ptr->app_source_data = source;
+    dma_data_ptr->dma_intermediate_buff = dma_dest;
+
+    return dma_data_ptr;
+}
+
 
 __INLINE static void I2S_error_handler(volatile I2S_handle_t* handle){
     static const uint8_t OVR_BIT = 6;

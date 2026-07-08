@@ -32,13 +32,14 @@ typedef enum intrpt_reg{
 #define DMA1_BASE_ADDR (0x40026000)
 #define DMA2_BASE_ADDR (0x40026400)
 
-static volatile DMA_handle_t dma0_handle;
-static volatile DMA_handle_t dma1_handle;
-static volatile DMA_handle_t dma2_handle;
-static volatile DMA_handle_t dma3_handle;
-static volatile DMA_handle_t dma4_handle;
-static volatile DMA_handle_t dma5_handle;
-static volatile DMA_handle_t dma6_handle;
+static DMA_handle_t dma0_handle;
+static DMA_handle_t dma1_handle;
+static DMA_handle_t dma2_handle;
+static DMA_handle_t dma3_handle;
+static DMA_handle_t dma4_handle;
+static DMA_handle_t dma5_handle;
+static DMA_handle_t dma6_handle;
+static DMA_handle_t dma7_handle;
 
 __STATIC_INLINE uint32_t DMA_get_intrpt_bit(DMA_stream_id_t stream_id, intrpt_reg_t reg){
     uint32_t some = stream_id%4;
@@ -267,7 +268,7 @@ __STATIC_INLINE DMA_driver_t* DMA_get_instance(DMA_instance_t instance){
 
 static const uint8_t DMA_CIRC_START_BIT = 8;
 __STATIC_INLINE uint8_t DMA_get_circ_mode(DMA_driver_t* self, DMA_stream_id_t stream){
-    return ((self->streams[stream].CR >> circ_mode_bit) & (0x1UL));
+    return ((self->streams[stream].CR >> DMA_CIRC_START_BIT) & (0x1UL));
 }
 
 
@@ -339,7 +340,8 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
     DMA_cr |= ((uint32_t)config->DME_intrpt_en << DMA_DMEIE_BIT);
     driver->streams[config->stream].CR = DMA_cr;
 
-    driver->streams[config->stream].NDTR = (uint32_t)config->no_of_items;
+    
+    driver->streams[config->stream].NDTR = 1UL<<(uint32_t)config->no_of_items;
 
     driver->streams[config->stream].PAR = config->peripheral_addr;
 
@@ -376,6 +378,7 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
 
 DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config){
     DMA_handle_t* handle_ptr = NULL;
+    BARE_ASSERT(config != NULL);
 
     switch(config->stream){
         case DMA_STREAM_0:
@@ -390,7 +393,7 @@ DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config){
         case DMA_STREAM_3:
             handle_ptr = &dma3_handle;
             break;
-        case DMA_CHANNEL_4:
+        case DMA_STREAM_4:
             handle_ptr = &dma4_handle;
             break;
         case DMA_STREAM_5:
@@ -400,13 +403,15 @@ DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config){
             handle_ptr = &dma6_handle;
             break;
         case DMA_STREAM_7:
-            __BKPT(0);
+            handle_ptr = &dma7_handle;
             break;
+        case DMA_BAD_STREAM:
         default:
             __BKPT(0);
-            break;
     }
 
+    BARE_ASSERT(handle_ptr != NULL);
+    BARE_ASSERT(handle_ptr->transfer_state != DMA_STATE_BUSY);
     BARE_ASSERT(config->driver != NULL);
     BARE_ASSERT(config->HC_callback != NULL);
     BARE_ASSERT(config->TC_callback != NULL);
@@ -424,7 +429,7 @@ DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config){
     return handle_ptr;
 }
 
-__STATIC_INLINE void dma_isr_handler(volatile DMA_handle_t* handle){
+__STATIC_INLINE void dma_isr_handler(DMA_handle_t* handle){
     if(DMA_get_te(handle->driver, handle->stream) == 1){
         DMA_clear_te(handle->driver, handle->stream);
         handle->error_state = DMA_ERROR_TRANSFER;
@@ -499,4 +504,7 @@ void DMA1_Stream5_IRQHandler(void){
 }
 void DMA1_Stream6_IRQHandler(void){
     dma_isr_handler(&dma6_handle);
+}
+void DMA1_Stream7_IRQHandler(void){
+    dma_isr_handler(&dma7_handle);
 }

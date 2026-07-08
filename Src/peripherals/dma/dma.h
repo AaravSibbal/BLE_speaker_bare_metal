@@ -109,6 +109,23 @@ typedef enum DMA_instance{
     DMA_INSTANCE_2 = 0x1
 }DMA_instance_t;
 
+typedef enum DMA_buff_size{
+    DMA_BUFF_SIZE_1 = 0,
+    DMA_BUFF_SIZE_2 = 1,
+    DMA_BUFF_SIZE_4 = 2,
+    DMA_BUFF_SIZE_8 = 3,
+    DMA_BUFF_SIZE_16 = 4,
+    DMA_BUFF_SIZE_32 = 5,
+    DMA_BUFF_SIZE_64 = 6,
+    DMA_BUFF_SIZE_128 = 7,
+    DMA_BUFF_SIZE_256 = 8,
+    DMA_BUFF_SIZE_512 = 9,
+    DMA_BUFF_SIZE_1024 = 10,
+    DMA_BUFF_SIZE_2048 = 11,
+    DMA_BUFF_SIZE_4096 = 12,
+    DMA_BUFF_SIZE_8192 = 13
+}DMA_buff_size_t;
+
 typedef struct DMA_config{
     DMA_stream_id_t stream;
     DMA_channel_t channel;
@@ -129,7 +146,7 @@ typedef struct DMA_config{
     __bool HT_intrpt_en;
     __bool TE_intrpt_en;
     __bool DME_intrpt_en;
-    uint16_t no_of_items;
+    DMA_buff_size_t no_of_items;
     uint32_t peripheral_addr;
     uint32_t mem0_addr;
     uint32_t mem1_addr;
@@ -149,12 +166,12 @@ typedef enum DMA_state{
     DMA_STATE_RESET = 0,
     DMA_STATE_READY = 1,
     DMA_STATE_BUSY = 2,
-    DMA_STATE_READY = 3,
     DMA_STATE_ERROR = 4
 }DMA_state_t;
 
 
 DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc);
+
 
 void DMA1_Stream1_IRQHandler(void);
 void DMA1_Stream2_IRQHandler(void);
@@ -162,6 +179,7 @@ void DMA1_Stream3_IRQHandler(void);
 void DMA1_Stream4_IRQHandler(void);
 void DMA1_Stream5_IRQHandler(void);
 void DMA1_Stream6_IRQHandler(void);
+void DMA1_Stream7_IRQHandler(void);
 
 
 typedef struct DMA_handle DMA_handle_t;
@@ -184,7 +202,7 @@ typedef struct DMA_hndl_config{
     DMA_callback_t HC_callback;
     DMA_callback_t TC_callback;
     DMA_callback_t error_callback;
-    void *user_data
+    void *user_data;
 }DMA_hndl_config_t;
 
 DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config);

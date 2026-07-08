@@ -113,6 +113,7 @@ void dac_init(RCC_t* rcc){
 
     dac_write(0x00, 0x00);
     
+    
     i2s_init(I2S_INSTANCE_3, rcc, I2S_MODE_DMA_TX);
     // 
     /**

@@ -2,10 +2,11 @@
 #define I2S_H
 
 #include "../rcc/rcc.h"
+#include "Src/peripherals/dma/dma.h"
 #include "Src/peripherals/spi/spi_driver.h"
 typedef enum I2S_instance{
     I2S_INSTANCE_2 = 0,
-    I2S_INSTANCE_3 = 1
+    I2S_INSTANCE_3 = 1,
 }I2S_instance_t;
 
 typedef enum I2S_mode{
@@ -27,10 +28,20 @@ typedef struct I2S_handle{
 
 }I2S_handle_t;
 
+typedef struct I2S_DMA_data{
+    uint32_t total_source_len;
+    uint32_t half_buff_size;
+    uint32_t current_read_offset;
+    const uint16_t* app_source_data;
+    uint16_t* dma_intermediate_buff;
+}I2S_DMA_data_t;
+
 // extern I2S_handle_t i2s2_handle;
 // extern I2S_handle_t i2s3_handle;
 
 void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode);
+I2S_DMA_data_t* i2s_init_dma_data(I2S_instance_t i2s_instance,  
+DMA_buff_size_t buff_size, const uint16_t* source, uint16_t* dma_dest);
 
 void SPI3_IRQHandler(void);
 #endif
