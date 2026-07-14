@@ -47,6 +47,7 @@ set(sources_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/dma/dma.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/itm/itm.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/print/printf.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/services/audio_engine/audio_engine.c
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/exti/exti.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/gpio/gpio.c   
 	${CMAKE_CURRENT_SOURCE_DIR}/Src/peripherals/i2c/i2c.c 

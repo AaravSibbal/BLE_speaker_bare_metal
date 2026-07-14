@@ -41,6 +41,8 @@ static DMA_handle_t dma5_handle;
 static DMA_handle_t dma6_handle;
 static DMA_handle_t dma7_handle;
 
+static const uint32_t DMA_CT_START_BIT = 19;
+
 __STATIC_INLINE uint32_t DMA_get_intrpt_bit(DMA_stream_id_t stream_id, intrpt_reg_t reg){
     uint32_t some = stream_id%4;
     switch(some){
@@ -279,7 +281,6 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
     static const uint32_t DMA_CHSEL_START_BIT = 25;
     static const uint32_t DMA_MBURST_START_BIT = 23;
     static const uint32_t DMA_PBURST_START_BIT = 21;
-    static const uint32_t DMA_CT_START_BIT = 19;
     static const uint32_t DMA_DBM_START_BIT = 18;
     static const uint32_t DMA_PL_START_BIT = 16;
     static const uint32_t DMA_PINCOS_START_BIT = 15;
@@ -340,7 +341,7 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
     DMA_cr |= ((uint32_t)config->DME_intrpt_en << DMA_DMEIE_BIT);
     driver->streams[config->stream].CR = DMA_cr;
 
-    
+
     driver->streams[config->stream].NDTR = 1UL<<(uint32_t)config->no_of_items;
 
     driver->streams[config->stream].PAR = config->peripheral_addr;
@@ -507,4 +508,28 @@ void DMA1_Stream6_IRQHandler(void){
 }
 void DMA1_Stream7_IRQHandler(void){
     dma_isr_handler(&dma7_handle);
+}
+
+__STATIC_INLINE void DMA_set_mem0(DMA_driver_t* driver, DMA_stream_id_t stream, uint32_t val){
+    driver->streams[stream].M0AR = val;
+}
+
+__STATIC_INLINE void DMA_set_mem1(DMA_driver_t* driver, DMA_stream_id_t stream, uint32_t val){
+    driver->streams[stream].M1AR = val;
+}
+
+__STATIC_INLINE uint32_t DMA_get_CT(DMA_driver_t* driver, DMA_stream_id_t stream){
+    return (uint32_t)((driver->streams[stream].CR >> DMA_CT_START_BIT) & 0x1UL);
+}
+
+__INLINE void DMA_set_next_buffer(DMA_driver_t* driver, DMA_stream_id_t stream, uint32_t val){
+    uint32_t target = DMA_get_CT(driver, stream);
+    if(target == DMA_TARGET_MEM_0){
+        DMA_set_mem1(driver, stream, val);
+    }else if(target ==  DMA_TARGET_MEM_1){
+        DMA_set_mem0(driver, stream, val);
+    }else{
+        __BKPT(0);
+        // I told you not to fuck with my enums!
+    }
 }

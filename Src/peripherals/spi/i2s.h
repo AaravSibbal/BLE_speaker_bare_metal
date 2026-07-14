@@ -29,12 +29,10 @@ typedef struct I2S_handle{
 }I2S_handle_t;
 
 typedef struct I2S_DMA_data{
-    uint32_t total_source_len;
-    uint32_t half_buff_size;
-    uint32_t current_read_offset;
-    const uint16_t* app_source_data;
-    uint16_t* dma_intermediate_buff;
+    uint32_t dummy;
 }I2S_DMA_data_t;
+
+
 
 // extern I2S_handle_t i2s2_handle;
 // extern I2S_handle_t i2s3_handle;

@@ -19,6 +19,7 @@
 #include "arm/arm.h"
 #include "peripherals/i2c/i2c.h"
 #include "devices/dac/dac.h"
+#include "services/audio_engine/audio_engine.h"
 // #include "ballmer_audio.h"
 #include <stdint.h>
 
@@ -74,7 +75,8 @@ int main(void){
 
     uint32_t sample_index = 0;
     uint8_t channel_toggle = 0;
-
+    audio_engine_t* audio_engine_obj = audio_engine_init();
+    (void)audio_engine_obj;
     while(1) {
         // Check the TXE (Transmit buffer empty) bit in the Status Register
         // TXE is Bit 1 of SPI_SR

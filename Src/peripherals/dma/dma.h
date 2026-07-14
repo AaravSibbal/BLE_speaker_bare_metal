@@ -171,7 +171,8 @@ typedef enum DMA_state{
 
 
 DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc);
-
+//for double buffering mode only
+void DMA_set_next_buffer(DMA_driver_t* driver, DMA_stream_id_t stream, uint32_t val); 
 
 void DMA1_Stream1_IRQHandler(void);
 void DMA1_Stream2_IRQHandler(void);

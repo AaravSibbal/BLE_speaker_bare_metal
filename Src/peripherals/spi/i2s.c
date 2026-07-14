@@ -7,7 +7,7 @@
 #include "Src/peripherals/dma/dma.h"
 #include "spi_driver.h"
 #include "stdint.h"
-#include <cstddef>
+#include <stddef.h>
 
 static const GPIO_port_t I2S3_MCK_GPIO_PORT = GPIO_PORT_C;
 static const GPIO_Pin_t I2S3_MCK_GPIO_PIN = GPIO_PIN_7;
@@ -24,8 +24,8 @@ static const GPIO_OTYPER_t I2S_gpio_otype = GPIO_TYPE_PUSH_PULL;
 static const GPIO_PUPDR_t I2S_gpio_pupd = NO_PUPD;
 static const GPIO_OSPEEDR_t I2S_gpio_speed = OSPEED_HIGH;
 
-static const DMA_buff_size_t DMA_BUFFER_SIZE = DMA_BUFF_SIZE_4096;
-static volatile uint16_t DMA_mem0_buffer[(1UL<<DMA_BUFFER_SIZE)] = { 0 }; 
+static const DMA_buff_size_t DMA_BUFFER_SIZE = DMA_BUFF_SIZE_2048;
+// static volatile uint16_t DMA_mem0_buffer[(1UL<<DMA_BUFFER_SIZE)] = { 0 }; 
 
 static volatile I2S_handle_t i2s2_handle = { 0 };
 static volatile I2S_handle_t i2s3_handle = { 0 };
@@ -160,7 +160,7 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
             .memory_burst = DMA_INCR_SINGLE,
             .peripheral_burst = DMA_INCR_SINGLE,
             .curr_target = DMA_TARGET_MEM_0,
-            .double_buffer_mode = DMA_DB_DIS,
+            .double_buffer_mode = DMA_DB_EN,
             .priority_level = DMA_PRIORITY_HIGH,
             .peripheral_incrmnt_offset = DMA_PINCOS_LINKED_TO_PSIZE,
             .memory_data_size = DMA_MEM_16_BIT,
@@ -176,7 +176,7 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
             .DME_intrpt_en = TRUE,
             .no_of_items = DMA_BUFFER_SIZE,
             .peripheral_addr = SPI_get_DR_addr(spi_driver),
-            .mem0_addr = (uint32_t)DMA_mem0_buffer,
+            .mem0_addr = (uint32_t)0,//TODO: AUDIO ENGINE THING
             .mem1_addr = 0,
             .mode = DMA_MODE_DIRECT,
             .FIFO_err_intrpt_en = FALSE,
@@ -198,8 +198,8 @@ void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode){
             .user_data = i2s_init_dma_data(
                 instance, 
                 DMA_BUFFER_SIZE,
-                DMA_mem0_buffer,
-                // TODO: FINISH THE INIT SEQUENCE
+                NULL,//DMA_mem0_buffer
+                NULL// TODO: FINISH THE INIT SEQUENCE
                 )
         };
 
@@ -232,11 +232,11 @@ DMA_buff_size_t buff_size, const uint16_t* source, uint16_t* dma_dest){
             __BKPT(0);    
     }
 
-    dma_data_ptr->total_source_len = (1UL<<(uint32_t)buff_size);
-    dma_data_ptr->half_buff_size = (1UL<<((uint32_t)buff_size-1));
-    dma_data_ptr->current_read_offset = 0;
-    dma_data_ptr->app_source_data = source;
-    dma_data_ptr->dma_intermediate_buff = dma_dest;
+    // dma_data_ptr->total_source_len = (1UL<<(uint32_t)buff_size);
+    // dma_data_ptr->half_buff_size = (1UL<<((uint32_t)buff_size-1));
+    // dma_data_ptr->current_read_offset = 0;
+    // dma_data_ptr->app_source_data = source;
+    // dma_data_ptr->dma_intermediate_buff = dma_dest;
 
     return dma_data_ptr;
 }
