@@ -3,6 +3,7 @@
 #include "Src/assert.h"
 #include "Src/def.h"
 #include "Src/peripherals/dma/dma.h"
+#include "Src/peripherals/rcc/rcc.h"
 #include "Src/services/print/printf.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -15,7 +16,7 @@ static block_t SILENCE_BLOCK;
 static block_t DUMP_BLOCK;
 static block_t block_arr[8];
 
-audio_engine_t* audio_engine_init(){
+audio_engine_t* audio_engine_init(engine_mode_t mode, RCC_t* rcc){
     for(int i=0; i<BLOCK_QUEUE_CAPACITY; i++){
         audio_engine_obj.block_arr[i] = &block_arr[i];
     }
@@ -35,10 +36,22 @@ audio_engine_t* audio_engine_init(){
     SILENCE_BLOCK.state = BLOCK_STATE_SILENCE;
     DUMP_BLOCK = (block_t){0};
     DUMP_BLOCK.state = BLOCK_STATE_DUMP;
+
+    if(mode = ENGINE_MODE_NORMAL){
+        i2s_init
+    }else if(ENGINE_MODE_TESTING){
+
+    }
+    else{
+        __BKPT(0);
+        // kendrick didn't go far enough!
+        // what are you doing!
+    }
+
     return &audio_engine_obj;    
 }
 
-static block_t* empty_queue_buffer[8];
+static block_t* empty_queue_buffer[BLOCK_QUEUE_CAPACITY];
 static block_t* raw_queue_buffer[BLOCK_QUEUE_CAPACITY];
 static block_t* processed_queue_buffer[BLOCK_QUEUE_CAPACITY];
 
@@ -115,6 +128,8 @@ uint8_t block_queue_get_size(block_queue_t* self){
     return (self->head - self->tail);
 }
 
+
+// TODO: CHANGE THE CALLBACK'S PARAMS TO DMA HANDLE
 __INLINE void audio_engine_tx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver, DMA_stream_id_t stream){
     // I have completed te transfer and after this callback we will head to the new buffer
     // I think here one thing I need to do is get the next block that I can use, 
@@ -152,6 +167,7 @@ __INLINE void audio_engine_tx_dma_TC_callback(audio_engine_t* self, DMA_driver_t
     __DMB();
 }
 
+// TODO: CHANGE THE CALLBACK'S PARAMS TO DMA HANDLE
 void audio_engine_rx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver, DMA_stream_id_t stream){
     __bool result = FALSE;
     block_t* temp_block_ptr = NULL;

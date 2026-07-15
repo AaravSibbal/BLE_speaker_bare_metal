@@ -2,6 +2,7 @@
 #define AUDIO_ENGINE
 
 #include "Src/peripherals/dma/dma.h"
+#include "Src/peripherals/rcc/rcc.h"
 #include "stdint.h"
 
 #define BLOCK_DATA_SIZE ((uint16_t)2048)
@@ -35,6 +36,11 @@ typedef enum block_queue_type{
     QUEUE_TYPE_PROCESSED = 2
 }block_queue_type_t;
 
+typedef enum engine_mode{
+    ENGINE_MODE_NORMAL = 0,
+    ENGINE_MODE_TESTING = 1
+}engine_mode_t;
+
 block_queue_t* block_queue_init(block_queue_type_t type);
 __bool block_queue_enqueue(block_queue_t* self, block_t* data);//return true if we can enqueue
 block_t* block_queue_dequeue(block_queue_t* self); // will be null if can't do it
@@ -62,7 +68,7 @@ typedef struct audio_engine{
 }audio_engine_t;
 
 block_t* block_init(uint8_t capacity);
-audio_engine_t* audio_engine_init(void);
+audio_engine_t* audio_engine_init(engine_mode_t mode, RCC_t* rcc);
 
 void audio_engine_tx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver, DMA_stream_id_t stream);
 void audio_engine_rx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver, DMA_stream_id_t stream);

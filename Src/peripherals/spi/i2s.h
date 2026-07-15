@@ -29,7 +29,7 @@ typedef struct I2S_handle{
 }I2S_handle_t;
 
 typedef struct I2S_DMA_data{
-    uint32_t dummy;
+
 }I2S_DMA_data_t;
 
 
@@ -37,9 +37,9 @@ typedef struct I2S_DMA_data{
 // extern I2S_handle_t i2s2_handle;
 // extern I2S_handle_t i2s3_handle;
 
-void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode);
-I2S_DMA_data_t* i2s_init_dma_data(I2S_instance_t i2s_instance,  
-DMA_buff_size_t buff_size, const uint16_t* source, uint16_t* dma_dest);
+void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode, 
+DMA_callback_t hc_cb, DMA_callback_t tc_cb, DMA_callback_t error_cb,
+void* user_data, uint32_t mem0_addr, uint32_t mem1_addr);
 
 void SPI3_IRQHandler(void);
 #endif
