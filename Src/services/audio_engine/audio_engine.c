@@ -1,7 +1,9 @@
 #include "audio_engine.h"
 #include "../../arm/arm.h"
+#include "Src/assert.h"
 #include "Src/def.h"
 #include "Src/peripherals/dma/dma.h"
+#include "Src/services/print/printf.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -9,12 +11,13 @@
 static const uint8_t BLOCK_QUEUE_MOD_VAL = BLOCK_QUEUE_CAPACITY - 1;
 
 static audio_engine_t audio_engine_obj;
-static const block_t SILENCE_BLOCK;
+static block_t SILENCE_BLOCK;
 static block_t DUMP_BLOCK;
+static block_t block_arr[8];
 
 audio_engine_t* audio_engine_init(){
     for(int i=0; i<BLOCK_QUEUE_CAPACITY; i++){
-        *audio_engine_obj.block_arr[i] = (block_t){ 0 };
+        audio_engine_obj.block_arr[i] = &block_arr[i];
     }
     audio_engine_obj.empty_block_queue = block_queue_init(QUEUE_TYPE_EMPTY);
     audio_engine_obj.processed_block_queue = block_queue_init(QUEUE_TYPE_PROCESSED);
@@ -27,10 +30,10 @@ audio_engine_t* audio_engine_init(){
         );
     }
     audio_engine_obj.consequetive_underrun = 0;
-    audio_engine_obj.state = ENGINE_STATE_IDLE;
-    SILENCE_BLOCK.data = {0};
+    // audio_engine_obj.state = ENGINE_STATE_IDLE;
+    SILENCE_BLOCK = (block_t){0};
     SILENCE_BLOCK.state = BLOCK_STATE_SILENCE;
-    DUMP_BLOCK.data = {0};
+    DUMP_BLOCK = (block_t){0};
     DUMP_BLOCK.state = BLOCK_STATE_DUMP;
     return &audio_engine_obj;    
 }
@@ -108,57 +111,44 @@ __bool block_queue_is_full(block_queue_t* self){
     return FALSE;
 }
 
+uint8_t block_queue_get_size(block_queue_t* self){
+    return (self->head - self->tail);
+}
+
 __INLINE void audio_engine_tx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver, DMA_stream_id_t stream){
     // I have completed te transfer and after this callback we will head to the new buffer
     // I think here one thing I need to do is get the next block that I can use, 
     
     block_t* temp_block_ptr = NULL;
     __bool result = FALSE;
-    switch (self->state) {
-        case ENGINE_STATE_IDLE:
-            // this shouldn't happen in this state, because by the definition of the state dmatx should be off
+    // setting curr block to empty queue
+    if(self->curr_tx_block != &SILENCE_BLOCK){
+        self->curr_tx_block->state = BLOCK_STATE_EMPTY;
+        result = block_queue_enqueue(self->empty_block_queue, self->curr_tx_block);
+        if(result != TRUE){
             __BKPT(0);
-            break;
-        case ENGINE_STATE_WAKE_UP:
-            // because we are defining the wake_up state as dmatx as off this state is invalid as well
-            __BKPT(0);
-            break;
-        case ENGINE_STATE_RUNNING:
-            // setting curr block to empty queue
-            if(self->curr_tx_block != &SILENCE_BLOCK){
-                self->curr_tx_block->state = BLOCK_STATE_EMPTY;
-                result = block_queue_enqueue(self->empty_block_queue, self->curr_tx_block);
-                if(result != TRUE){
-                    __BKPT(0);
-                    // there are only 8 blocks total which is also the cap for queue
-                    // whatever happended it is just too far gone now. 
-                    // crash
-                }
-            }
-
-            
-            // setting next block to curr
-            if(self->next_tx_block != &SILENCE_BLOCK){
-                self->next_tx_block->state = BLOCK_STATE_READING;
-            }
-            self->curr_tx_block = self->next_tx_block;
-
-            // getting processed block from queue to next block
-            temp_block_ptr = block_queue_dequeue(self->processed_block_queue);
-            if(temp_block_ptr == NULL){
-                temp_block_ptr = &SILENCE_BLOCK;
-                self->consequetive_underrun++;
-            }else{
-                self->consequetive_underrun = 0;
-            }
-            
-            DMA_set_next_buffer(driver, stream, (uint32_t)temp_block_ptr->data);
-            self->next_tx_block = temp_block_ptr;
-
-            break;
-        default:
-            __BKPT(0);//don't fuck with my enums!!
+            // there are only 8 blocks total which is also the cap for queue
+            // whatever happended it is just too far gone now. 
+            // crash
+        }
     }
+    // setting next block to curr
+    if(self->next_tx_block != &SILENCE_BLOCK){
+        self->next_tx_block->state = BLOCK_STATE_READING;
+    }
+    self->curr_tx_block = self->next_tx_block;
+
+    // getting processed block from queue to next block
+    temp_block_ptr = block_queue_dequeue(self->processed_block_queue);
+    if(temp_block_ptr == NULL){
+        temp_block_ptr = &SILENCE_BLOCK;
+        self->consequetive_underrun++;
+    }else{
+        self->consequetive_underrun = 0;
+    }
+    
+    DMA_set_next_buffer(driver, stream, (uint32_t)temp_block_ptr->data);
+    self->next_tx_block = temp_block_ptr;
     __DMB();
 }
 
@@ -198,3 +188,86 @@ void audio_engine_rx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver,
     self->next_rx_block = temp_block_ptr;
     __DMB();
 }
+
+__STATIC_INLINE void audio_engine_handle_events(audio_engine_t* self){
+    // 1. threshold
+    block_t* temp_block_ptr = NULL;
+    __bool result = FALSE;
+    uint32_t irq_state = __get_PRIMASK();
+    if(self->consequetive_overrun >= 1){
+        // we are out of empty blocks
+        // we take one of raw blocks and add it to the
+        temp_block_ptr = block_queue_dequeue(self->raw_block_queue);
+        if(temp_block_ptr == NULL){
+            // we take the processed queue's block and add it to the empty;
+            // this is a possible race condition but becase it is so rare
+            __disable_irq();
+            __ISB();
+            temp_block_ptr = block_queue_dequeue(self->processed_block_queue);
+            __set_PRIMASK(irq_state);
+            __ISB();
+            if(temp_block_ptr == NULL){
+                __BKPT(0);
+                // everything is empty Idk what is going on but all the blocks
+                // are outside of the queue which shouldn't have happened
+            }
+        }
+        BARE_ASSERT(temp_block_ptr != &DUMP_BLOCK);
+
+        __disable_irq();
+        __ISB();
+        result = block_queue_enqueue(self->empty_block_queue, temp_block_ptr);
+        self->consequetive_overrun = 0;
+        __set_PRIMASK(irq_state);
+        __ISB();
+        if(result == FALSE){
+            __BKPT(0);
+            // again shouldn't happen ever
+        }
+    }
+    if(self->consequetive_underrun >= 1){
+        // we are out of processed blocks
+        // we actually don't need to do anything here
+        // we already handled it in the tx isr
+    }
+}
+
+#define SILENCE_THRESHOLD ((int16_t)0x000F) 
+/*
+    retuns true if we did find a silence block
+    return block if the block is not silent
+*/
+ __STATIC_INLINE __bool audio_engine_silence_check(const block_t* block){
+    uint16_t i=0; 
+    while(i < BLOCK_DATA_SIZE){
+        if((block->data[i] > SILENCE_THRESHOLD) || 
+        (block->data[i] < -SILENCE_THRESHOLD))
+        {
+            return FALSE;
+        }
+        i++;
+    }
+    return TRUE;
+}
+
+void audio_engine_processing(audio_engine_t* self){
+    audio_engine_handle_events(self);
+
+    // get the next block from memory
+    block_t* raw_block_ptr = NULL;
+    __bool result = FALSE;
+    raw_block_ptr = block_queue_dequeue(self->raw_block_queue);
+    if(raw_block_ptr == NULL){
+        // there is no work to do
+        // lets go to the mall today
+        return;
+    }
+    BARE_ASSERT(raw_block_ptr != &DUMP_BLOCK);
+
+    raw_block_ptr->state = BLOCK_STATE_PROCESSED;
+    result = block_queue_enqueue(self->processed_block_queue, raw_block_ptr);
+    if(result == FALSE){
+        __BKPT(0);
+        // what is going on here why is my dma tx not processing shit?
+    }
+}   
