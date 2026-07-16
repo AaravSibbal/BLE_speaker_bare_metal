@@ -25,21 +25,19 @@ typedef enum I2S_error{
 typedef struct I2S_handle{
     SPI_driver_t* driver;
     I2S_error_t error_state;
-
 }I2S_handle_t;
 
-typedef struct I2S_DMA_data{
+// typedef struct I2S_DMA_data{
 
-}I2S_DMA_data_t;
+// }I2S_DMA_data_t;
 
 
-
-// extern I2S_handle_t i2s2_handle;
-// extern I2S_handle_t i2s3_handle;
-
-void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode, 
+I2S_handle_t* i2s_configure(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode, 
 DMA_callback_t hc_cb, DMA_callback_t tc_cb, DMA_callback_t error_cb,
 void* user_data, uint32_t mem0_addr, uint32_t mem1_addr);
+
+void i2s_init(I2S_handle_t* self);
+
 
 void SPI3_IRQHandler(void);
 #endif

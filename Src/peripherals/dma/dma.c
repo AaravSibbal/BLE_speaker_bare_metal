@@ -274,7 +274,7 @@ __STATIC_INLINE uint8_t DMA_get_circ_mode(DMA_driver_t* self, DMA_stream_id_t st
 }
 
 
-DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc){
+DMA_driver_t* DMA_configure(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc){
     static const uint32_t DMA_CR_RESERVED_START_BIT = 28;
     static const uint32_t DMA_CR_RESERVED_FIELD_LEN = 4;
     static const uint32_t DMA_CR_RESERVED1_START_BIT = 20;
@@ -373,8 +373,12 @@ DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc
     }
 
     driver->streams[config->stream].FCR = dma_sxfcr;
-    DMA_en_stream(driver, config->stream);
     return driver;
+}
+
+
+void DMA_init(DMA_driver_t* driver, DMA_stream_id_t stream){
+    DMA_en_stream(driver, stream);
 }
 
 DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config){
@@ -414,12 +418,13 @@ DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config){
     BARE_ASSERT(handle_ptr != NULL);
     BARE_ASSERT(handle_ptr->transfer_state != DMA_STATE_BUSY);
     BARE_ASSERT(config->driver != NULL);
-    BARE_ASSERT(config->HC_callback != NULL);
+    // BARE_ASSERT(config->HC_callback != NULL);
     BARE_ASSERT(config->TC_callback != NULL);
-    BARE_ASSERT(config->error_callback != NULL);
+    // BARE_ASSERT(config->error_callback != NULL);
     BARE_ASSERT(config->user_data != NULL);
 
     handle_ptr->driver = config->driver;
+    handle_ptr->stream = config->stream;
     handle_ptr->HC_callback = config->HC_callback;
     handle_ptr->TC_callback = config->TC_callback;
     handle_ptr->error_callback = config->error_callback;

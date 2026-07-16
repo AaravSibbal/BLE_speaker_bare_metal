@@ -27,11 +27,11 @@ static const GPIO_OSPEEDR_t I2S_gpio_speed = OSPEED_HIGH;
 static const DMA_buff_size_t DMA_BUFFER_SIZE = DMA_BUFF_SIZE_2048;
 // static volatile uint16_t DMA_mem0_buffer[(1UL<<DMA_BUFFER_SIZE)] = { 0 }; 
 
-static volatile I2S_handle_t i2s2_handle = { 0 };
-static volatile I2S_handle_t i2s3_handle = { 0 };
+static I2S_handle_t i2s2_handle = { 0 };
+static I2S_handle_t i2s3_handle = { 0 };
 
-I2S_DMA_data_t i2s2_dma_data;
-I2S_DMA_data_t i2s3_dma_data;
+// I2S_DMA_data_t i2s2_dma_data;
+// I2S_DMA_data_t i2s3_dma_data;
 
 
 __STATIC_INLINE void i2s_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin, GPIO_AFx_t af_val){
@@ -106,7 +106,7 @@ __STATIC_INLINE DMA_stream_id_t I2S_get_DMA_stream(I2S_instance_t instance, I2S_
 }
 
 
-void i2s_init(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode,
+I2S_handle_t* i2s_configure(I2S_instance_t instance, RCC_t* rcc, I2S_mode_t mode,
 DMA_callback_t hc_cb, DMA_callback_t tc_cb, DMA_callback_t error_cb,
 void* user_data, uint32_t mem0_addr, uint32_t mem1_addr)
 {
@@ -125,7 +125,7 @@ void* user_data, uint32_t mem0_addr, uint32_t mem1_addr)
             break;
         default:
             __BKPT(0);
-            return;
+            return NULL;
     }
 
     SPI_driver_t* spi_driver = SPI_get_instance(spi_instance);
@@ -161,7 +161,7 @@ void* user_data, uint32_t mem0_addr, uint32_t mem1_addr)
             .data_direction = DMA_DIR_MEM_TO_PERIPH,
             .periph_flow_crtl = DMA_CTRL_DMA,
             .TC_intrpt_en = TRUE,
-            .HT_intrpt_en = TRUE,
+            .HT_intrpt_en = FALSE,
             .TE_intrpt_en = TRUE,
             .DME_intrpt_en = TRUE,
             .no_of_items = DMA_BUFFER_SIZE,
@@ -173,7 +173,7 @@ void* user_data, uint32_t mem0_addr, uint32_t mem1_addr)
             .fifo_threshold = DMA_FIFO_FULL // doesn't matter
         };
 
-        DMA_driver_t* dma_driver = DMA_init(
+        DMA_driver_t* dma_driver = DMA_configure(
             &dma_config,
             DMA_INSTANCE_1, 
             rcc
@@ -188,43 +188,108 @@ void* user_data, uint32_t mem0_addr, uint32_t mem1_addr)
             .user_data = user_data
         };
 
-
         DMA_handle_t* dma_handle = DMA_handle_init(&dma_handle_config);
-        (void)dma_handle;
-
-    }else if(mode == I2S_MODE_DMA_RX){
+        DMA_init(dma_handle->driver, dma_handle->stream);
+    }
+    else if(mode == I2S_MODE_DMA_RX){
+        __BKPT(0); // there is still something here that I haven't done
         SPI_set_DMARX(spi_driver, SPI_EN);
         // not implemented the config yet
-        __BKPT(0);
+        DMA_config_t dma_config = {
+            .stream = I2S_get_DMA_stream(instance, mode),
+            .channel = DMA_CHANNEL_0,
+            .memory_burst = DMA_INCR_SINGLE,
+            .peripheral_burst = DMA_INCR_SINGLE,
+            .curr_target = DMA_TARGET_MEM_0,
+            .double_buffer_mode = DMA_DB_EN,
+            .priority_level = DMA_PRIORITY_HIGH,
+            .peripheral_incrmnt_offset = DMA_PINCOS_LINKED_TO_PSIZE,
+            .memory_data_size = DMA_MEM_16_BIT,
+            .peripheral_data_size = DMA_MEM_16_BIT,
+            .mem_incr_mode = DMA_MINC_INCREMENT,
+            .periph_incr_mode = DMA_PINC_FIXED,
+            .circ_mode = DMA_CIRC_EN,
+            .data_direction = DMA_DIR_PERIPH_TO_MEM,
+            .periph_flow_crtl = DMA_CTRL_DMA,
+            .TC_intrpt_en = TRUE,
+            .HT_intrpt_en = FALSE,
+            .TE_intrpt_en = TRUE,
+            .DME_intrpt_en = TRUE,
+            .no_of_items = DMA_BUFFER_SIZE,
+            .peripheral_addr = SPI_get_DR_addr(spi_driver),
+            .mem0_addr = mem0_addr,
+            .mem1_addr = mem1_addr,
+            .mode = DMA_MODE_DIRECT,
+            .FIFO_err_intrpt_en = FALSE,
+            .fifo_threshold = DMA_FIFO_FULL // doesn't matter
+        };
+
+        DMA_driver_t* dma_driver = DMA_configure(
+            &dma_config,
+            DMA_INSTANCE_1, 
+            rcc
+        ); //TODO: make sure that instance is correct
+
+        DMA_hndl_config_t dma_handle_config = {
+            .driver = dma_driver,
+            .stream = I2S_get_DMA_stream(instance, mode),
+            .HC_callback = hc_cb,
+            .TC_callback = tc_cb,
+            .error_callback = error_cb,
+            .user_data = user_data
+        };
+
+        DMA_handle_t* dma_handle = DMA_handle_init(&dma_handle_config);
+        DMA_init(dma_handle->driver, dma_handle->stream);
     }
-
-    SPI_en_I2S(spi_driver);
-}
-
-
-I2S_DMA_data_t* i2s_init_dma_data(I2S_instance_t i2s_instance,  
-DMA_buff_size_t buff_size, const uint16_t* source, uint16_t* dma_dest){
-    I2S_DMA_data_t* dma_data_ptr = NULL;
-    switch(i2s_instance){
+    
+    I2S_handle_t* i2s_handle_ptr = NULL;
+    switch (instance) {
         case I2S_INSTANCE_2:
-            dma_data_ptr = &i2s2_dma_data;   
+            i2s_handle_ptr = &i2s2_handle;
+            i2s_handle_ptr->driver = spi_driver;
+            i2s_handle_ptr->error_state = I2S_ERROR_NONE;
             break;
         case I2S_INSTANCE_3:
-            dma_data_ptr = &i2s3_dma_data;
+            i2s_handle_ptr = &i2s3_handle;
+            i2s_handle_ptr->driver = spi_driver;
+            i2s_handle_ptr->error_state = I2S_ERROR_NONE;
             break;
         default:
-            // don't fuck around with my enums
-            __BKPT(0);    
+            __BKPT(0);
+            // again with the wrong enums come on man
     }
-
-    // dma_data_ptr->total_source_len = (1UL<<(uint32_t)buff_size);
-    // dma_data_ptr->half_buff_size = (1UL<<((uint32_t)buff_size-1));
-    // dma_data_ptr->current_read_offset = 0;
-    // dma_data_ptr->app_source_data = source;
-    // dma_data_ptr->dma_intermediate_buff = dma_dest;
-
-    return dma_data_ptr;
+    return i2s_handle_ptr;
 }
+
+
+void i2s_init(I2S_handle_t* self){
+    SPI_en_I2S(self->driver);
+}
+
+// I2S_DMA_data_t* i2s_init_dma_data(I2S_instance_t i2s_instance,  
+// DMA_buff_size_t buff_size, const uint16_t* source, uint16_t* dma_dest){
+//     I2S_DMA_data_t* dma_data_ptr = NULL;
+//     switch(i2s_instance){
+//         case I2S_INSTANCE_2:
+//             dma_data_ptr = &i2s2_dma_data;   
+//             break;
+//         case I2S_INSTANCE_3:
+//             dma_data_ptr = &i2s3_dma_data;
+//             break;
+//         default:
+//             // don't fuck around with my enums
+//             __BKPT(0);    
+//     }
+
+//     // dma_data_ptr->total_source_len = (1UL<<(uint32_t)buff_size);
+//     // dma_data_ptr->half_buff_size = (1UL<<((uint32_t)buff_size-1));
+//     // dma_data_ptr->current_read_offset = 0;
+//     // dma_data_ptr->app_source_data = source;
+//     // dma_data_ptr->dma_intermediate_buff = dma_dest;
+
+//     return dma_data_ptr;
+// }
 
 
 __INLINE static void I2S_error_handler(volatile I2S_handle_t* handle){

@@ -2,9 +2,11 @@
 #include "../../arm/arm.h"
 #include "Src/assert.h"
 #include "Src/def.h"
+#include "Src/devices/dac/dac.h"
 #include "Src/peripherals/dma/dma.h"
 #include "Src/peripherals/rcc/rcc.h"
 #include "Src/services/print/printf.h"
+#include "Src/peripherals/spi/i2s.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -15,6 +17,47 @@ static audio_engine_t audio_engine_obj;
 static block_t SILENCE_BLOCK;
 static block_t DUMP_BLOCK;
 static block_t block_arr[8];
+#define SINE_WAVE_CAP (48)
+
+const int16_t sine_wave[SINE_WAVE_CAP] = {
+0, 1045, 2079, 3090, 4067, 5000, 5877, 6691, 
+7431, 8089, 8660, 9135, 9510, 9781, 9945, 10000, 
+9945, 9781, 9510, 9135, 8660, 8089, 7431, 6691, 
+5877, 5000, 4067, 3090, 2079, 1045, 0, -1045, 
+-2079, -3090, -4067, -5000, -5877, -6691, -7431, -8089, 
+-8660, -9135, -9510, -9781, -9945, -10000, -9945, -9781
+};
+
+static void audio_engine_prime(audio_engine_t* self){
+    block_t* temp_block_ptr = NULL;
+    
+    temp_block_ptr = block_queue_dequeue(self->empty_block_queue);
+    BARE_ASSERT(temp_block_ptr != NULL);
+    self->curr_rx_block = temp_block_ptr;
+    
+    temp_block_ptr = block_queue_dequeue(self->empty_block_queue);
+    BARE_ASSERT(temp_block_ptr != NULL);
+    self->next_rx_block = temp_block_ptr;
+
+    temp_block_ptr = block_queue_dequeue(self->empty_block_queue);
+    BARE_ASSERT(temp_block_ptr != NULL);
+    self->curr_tx_block = temp_block_ptr;
+
+    temp_block_ptr = block_queue_dequeue(self->empty_block_queue);
+    BARE_ASSERT(temp_block_ptr != NULL);
+    self->next_tx_block = temp_block_ptr;
+}
+
+static void audio_engine_prime_test_blocks(audio_engine_t* self){
+    uint8_t index = 0;
+
+    for(int i=0; i<BLOCK_QUEUE_CAPACITY; i++){
+        for(int j=0; j<BLOCK_DATA_SIZE; j++){
+            self->block_arr[i]->data[j] = sine_wave[index%SINE_WAVE_CAP];
+            index++;
+        }
+    }
+}
 
 audio_engine_t* audio_engine_init(engine_mode_t mode, RCC_t* rcc){
     for(int i=0; i<BLOCK_QUEUE_CAPACITY; i++){
@@ -24,6 +67,7 @@ audio_engine_t* audio_engine_init(engine_mode_t mode, RCC_t* rcc){
     audio_engine_obj.processed_block_queue = block_queue_init(QUEUE_TYPE_PROCESSED);
     audio_engine_obj.raw_block_queue = block_queue_init(QUEUE_TYPE_RAW);
     for(int i=0; i<BLOCK_QUEUE_CAPACITY; i++){
+        *audio_engine_obj.block_arr[i] = (block_t){0};
         audio_engine_obj.block_arr[i]->state = BLOCK_STATE_EMPTY;
         block_queue_enqueue(
             audio_engine_obj.empty_block_queue, 
@@ -31,16 +75,69 @@ audio_engine_t* audio_engine_init(engine_mode_t mode, RCC_t* rcc){
         );
     }
     audio_engine_obj.consequetive_underrun = 0;
+    audio_engine_obj.mode = mode;
     // audio_engine_obj.state = ENGINE_STATE_IDLE;
     SILENCE_BLOCK = (block_t){0};
     SILENCE_BLOCK.state = BLOCK_STATE_SILENCE;
     DUMP_BLOCK = (block_t){0};
     DUMP_BLOCK.state = BLOCK_STATE_DUMP;
 
-    if(mode = ENGINE_MODE_NORMAL){
-        i2s_init
-    }else if(ENGINE_MODE_TESTING){
+    if(mode == ENGINE_MODE_NORMAL){
+        audio_engine_prime(&audio_engine_obj);
 
+        I2S_handle_t* i2s_handle_tx = i2s_configure(
+            I2S_INSTANCE_3,
+            rcc, 
+            I2S_MODE_DMA_TX, 
+            NULL, 
+            (DMA_callback_t)&audio_engine_tx_dma_TC_callback,
+            NULL,
+            (void *)&audio_engine_obj,
+            (uint32_t)audio_engine_obj.curr_tx_block->data, 
+            (uint32_t)audio_engine_obj.next_tx_block->data
+        );
+
+        I2S_handle_t* i2s_handle_rx = i2s_configure(
+            I2S_INSTANCE_2,
+            rcc, 
+            I2S_MODE_DMA_RX, 
+            NULL, 
+            (DMA_callback_t)&audio_engine_rx_dma_TC_callback,
+            NULL,
+            (void *)&audio_engine_obj,
+            (uint32_t)audio_engine_obj.curr_rx_block->data, 
+            (uint32_t)audio_engine_obj.next_rx_block->data
+        );
+
+        i2s_init(i2s_handle_rx);
+        i2s_init(i2s_handle_tx);
+        dac_init(rcc);
+    }
+    else if(mode == ENGINE_MODE_TESTING){
+        audio_engine_prime_test_blocks(&audio_engine_obj);
+        audio_engine_prime(&audio_engine_obj);
+
+        for(int i=0; i<3; i++){
+            block_queue_enqueue(
+                audio_engine_obj.processed_block_queue, 
+                block_queue_dequeue(audio_engine_obj.empty_block_queue)
+            );
+        }
+
+        I2S_handle_t* i2s_handle_tx = i2s_configure(
+            I2S_INSTANCE_3,
+            rcc, 
+            I2S_MODE_DMA_TX, 
+            NULL, 
+            (DMA_callback_t)&audio_engine_tx_dma_TC_callback,
+            NULL,
+            (void *)&audio_engine_obj,
+            (uint32_t)audio_engine_obj.curr_tx_block->data, 
+            (uint32_t)audio_engine_obj.next_tx_block->data
+        );
+
+        i2s_init(i2s_handle_tx);
+        dac_init(rcc);
     }
     else{
         __BKPT(0);
@@ -50,6 +147,7 @@ audio_engine_t* audio_engine_init(engine_mode_t mode, RCC_t* rcc){
 
     return &audio_engine_obj;    
 }
+
 
 static block_t* empty_queue_buffer[BLOCK_QUEUE_CAPACITY];
 static block_t* raw_queue_buffer[BLOCK_QUEUE_CAPACITY];
@@ -130,10 +228,10 @@ uint8_t block_queue_get_size(block_queue_t* self){
 
 
 // TODO: CHANGE THE CALLBACK'S PARAMS TO DMA HANDLE
-__INLINE void audio_engine_tx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver, DMA_stream_id_t stream){
+__INLINE void audio_engine_tx_dma_TC_callback(DMA_handle_t* dma_handle){
     // I have completed te transfer and after this callback we will head to the new buffer
     // I think here one thing I need to do is get the next block that I can use, 
-    
+    audio_engine_t* self = (audio_engine_t*)dma_handle->user_data;
     block_t* temp_block_ptr = NULL;
     __bool result = FALSE;
     // setting curr block to empty queue
@@ -162,13 +260,17 @@ __INLINE void audio_engine_tx_dma_TC_callback(audio_engine_t* self, DMA_driver_t
         self->consequetive_underrun = 0;
     }
     
-    DMA_set_next_buffer(driver, stream, (uint32_t)temp_block_ptr->data);
+    DMA_set_next_buffer(dma_handle->driver, dma_handle->stream, (uint32_t)temp_block_ptr->data);
     self->next_tx_block = temp_block_ptr;
     __DMB();
+    if(self->mode == ENGINE_MODE_TESTING){
+        audio_engine_rx_dma_TC_callback(dma_handle);
+    }
 }
 
 // TODO: CHANGE THE CALLBACK'S PARAMS TO DMA HANDLE
-void audio_engine_rx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver, DMA_stream_id_t stream){
+__INLINE void audio_engine_rx_dma_TC_callback(DMA_handle_t* dma_handle){
+    audio_engine_t* self = (audio_engine_t*)dma_handle->user_data;
     __bool result = FALSE;
     block_t* temp_block_ptr = NULL;
 
@@ -200,7 +302,7 @@ void audio_engine_rx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver,
         self->consequetive_overrun = 0;
     }
 
-    DMA_set_next_buffer(driver, stream, (uint32_t)temp_block_ptr->data);
+    DMA_set_next_buffer(dma_handle->driver, dma_handle->stream, (uint32_t)temp_block_ptr->data);
     self->next_rx_block = temp_block_ptr;
     __DMB();
 }

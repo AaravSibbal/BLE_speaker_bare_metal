@@ -30,6 +30,8 @@
 int main(void){
     // setting up priority
     set_priority_grouping(PRIGROUP_4PRE_0SUB);
+    set_priority(DMA1_Stream5_IRQn, 1);
+    // set_priority(DMA1_Stream5_IRQn, 1);
     set_priority(I2C1_EV_IRQn, 2);
     set_priority(I2C1_ER_IRQn, 3);
     set_priority(SysTick_IRQn,4);
@@ -44,18 +46,19 @@ int main(void){
     enable_IRQ(BusFault_IRQn);
     enable_IRQ(MemoryManagement_IRQn);
     enable_IRQ(UsageFault_IRQn);
+    enable_IRQ(DMA1_Stream5_IRQn);
 
     __DSB();
     __ISB();
 
-    const int16_t sine_wave[48] = {
-    0, 1045, 2079, 3090, 4067, 5000, 5877, 6691, 
-    7431, 8089, 8660, 9135, 9510, 9781, 9945, 10000, 
-    9945, 9781, 9510, 9135, 8660, 8089, 7431, 6691, 
-    5877, 5000, 4067, 3090, 2079, 1045, 0, -1045, 
-    -2079, -3090, -4067, -5000, -5877, -6691, -7431, -8089, 
-    -8660, -9135, -9510, -9781, -9945, -10000, -9945, -9781
-    };
+    // const int16_t sine_wave[48] = {
+    // 0, 1045, 2079, 3090, 4067, 5000, 5877, 6691, 
+    // 7431, 8089, 8660, 9135, 9510, 9781, 9945, 10000, 
+    // 9945, 9781, 9510, 9135, 8660, 8089, 7431, 6691, 
+    // 5877, 5000, 4067, 3090, 2079, 1045, 0, -1045, 
+    // -2079, -3090, -4067, -5000, -5877, -6691, -7431, -8089, 
+    // -8660, -9135, -9510, -9781, -9945, -10000, -9945, -9781
+    // };
 
     RCC_t* rcc = init_RCC();
     RCC_en_GPIO(rcc, BUTTON_GPIO_PORT);
@@ -69,34 +72,34 @@ int main(void){
     GPIO_set_moder(green_led_gpio, GPIO_PIN_4, GPIO_MODE_OUTPUT);
     GPIO_set_otyper(green_led_gpio, GPIO_PIN_4, GPIO_TYPE_PUSH_PULL);
     
-    dac_init(rcc);
+    // dac_init(rcc);
 
-    SPI_driver_t* spi3 = SPI_get_instance(SPI_INSTANCE_3);
+    // SPI_driver_t* spi3 = SPI_get_instance(SPI_INSTANCE_3);
 
-    uint32_t sample_index = 0;
-    uint8_t channel_toggle = 0;
-    audio_engine_t* audio_engine_obj = audio_engine_init();
+    // uint32_t sample_index = 0;
+    // uint8_t channel_toggle = 0;
+    audio_engine_t* audio_engine_obj = audio_engine_init(ENGINE_MODE_TESTING, rcc);
     (void)audio_engine_obj;
-    while(1) {
-        // Check the TXE (Transmit buffer empty) bit in the Status Register
-        // TXE is Bit 1 of SPI_SR
-        if (SPI_get_SR(spi3) & (1 << 1)) {
+    // while(1) {
+    //     // Check the TXE (Transmit buffer empty) bit in the Status Register
+    //     // TXE is Bit 1 of SPI_SR
+    //     if (SPI_get_SR(spi3) & (1 << 1)) {
             
-            // Write a 16-bit zero to the Data Register
-            // This instantly forces the STM32 to start generating the SCK and WS clocks
-            // spi3->DR = 0x0000; 
-            SPI_set_DR(spi3, sine_wave[sample_index]);
-            channel_toggle++;
-            if(channel_toggle >= 2){
-                channel_toggle = 0;
-                sample_index++;
-                if(sample_index >= 241571){
-                    sample_index = 0;
-                }
-            }
+    //         // Write a 16-bit zero to the Data Register
+    //         // This instantly forces the STM32 to start generating the SCK and WS clocks
+    //         // spi3->DR = 0x0000; 
+    //         SPI_set_DR(spi3, sine_wave[sample_index]);
+    //         channel_toggle++;
+    //         if(channel_toggle >= 2){
+    //             channel_toggle = 0;
+    //             sample_index++;
+    //             if(sample_index >= 241571){
+    //                 sample_index = 0;
+    //             }
+    //         }
             
-        }
-    }
+    //     }
+    // }
 
     Systick_t* systick = Systick_init(16000000, AHB);
     Systick_start_clock(systick);
@@ -114,6 +117,7 @@ int main(void){
             LED_toggle(green_led);
             last_ticks = curr_ticks;
         }
+        audio_engine_processing(audio_engine_obj);
         // delay_ms(timer, 1000);
         __WFI();
     }

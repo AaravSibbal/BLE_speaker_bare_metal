@@ -170,7 +170,9 @@ typedef enum DMA_state{
 }DMA_state_t;
 
 
-DMA_driver_t* DMA_init(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc);
+DMA_driver_t* DMA_configure(DMA_config_t* config, DMA_instance_t instance, RCC_t* rcc);
+void DMA_init(DMA_driver_t* driver, DMA_stream_id_t stream);
+
 //for double buffering mode only
 void DMA_set_next_buffer(DMA_driver_t* driver, DMA_stream_id_t stream, uint32_t val); 
 

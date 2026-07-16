@@ -65,13 +65,14 @@ typedef struct audio_engine{
     block_t* curr_process_block;
     volatile uint32_t consequetive_underrun;
     volatile uint32_t consequetive_overrun;
+    engine_mode_t mode;
 }audio_engine_t;
 
 block_t* block_init(uint8_t capacity);
 audio_engine_t* audio_engine_init(engine_mode_t mode, RCC_t* rcc);
 
-void audio_engine_tx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver, DMA_stream_id_t stream);
-void audio_engine_rx_dma_TC_callback(audio_engine_t* self, DMA_driver_t* driver, DMA_stream_id_t stream);
+void audio_engine_tx_dma_TC_callback(DMA_handle_t* dma_handle);
+void audio_engine_rx_dma_TC_callback(DMA_handle_t* dma_handle);
 void audio_engine_processing(audio_engine_t* self);
 
 #endif
