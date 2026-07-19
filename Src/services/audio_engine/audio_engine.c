@@ -158,7 +158,7 @@ static block_queue_t raw_queue_obj;
 static block_queue_t processed_queue_obj;
 
 block_queue_t* block_queue_init(block_queue_type_t type){
-    block_queue_t* block_queue_ptr;
+    block_queue_t* block_queue_ptr = NULL;
     switch(type){
         case QUEUE_TYPE_EMPTY:
             block_queue_ptr = &empty_queue_obj;
@@ -188,7 +188,7 @@ block_queue_t* block_queue_init(block_queue_type_t type){
     return block_queue_ptr;
 }
 
-__bool block_queue_enqueue(block_queue_t* self, block_t* data){
+__INLINE __bool block_queue_enqueue(block_queue_t* self, block_t* data){
     if(block_queue_is_full(self) == TRUE){
         return FALSE;
     }
@@ -198,7 +198,7 @@ __bool block_queue_enqueue(block_queue_t* self, block_t* data){
     return TRUE;
 }
 
-block_t* block_queue_dequeue(block_queue_t* self){
+__INLINE block_t* block_queue_dequeue(block_queue_t* self){
     if(block_queue_is_empty(self) == TRUE){
         return NULL;
     }
@@ -208,14 +208,14 @@ block_t* block_queue_dequeue(block_queue_t* self){
     return data;
 }
 
-__bool block_queue_is_empty(block_queue_t* self){
+__INLINE __bool block_queue_is_empty(block_queue_t* self){
     if(self->head == self->tail){
         return TRUE;
     }
     return FALSE;
 }
 
-__bool block_queue_is_full(block_queue_t* self){
+__INLINE __bool block_queue_is_full(block_queue_t* self){
     if((self->head - self->tail) == self->capacity){
         return TRUE;
     }

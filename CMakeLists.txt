@@ -161,8 +161,8 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     # -Wsuggest-override
     >
     $<$<COMPILE_LANGUAGE:ASM>:-x assembler-with-cpp -MMD -MP>
-    $<$<CONFIG:Debug>:-O0 -g3 -ggdb>
-    $<$<CONFIG:Release>:-Os>
+    $<$<CONFIG:Debug>:-O2 -g3 -ggdb>
+    $<$<CONFIG:Release>:-O2>
 )
 
 # Linker options

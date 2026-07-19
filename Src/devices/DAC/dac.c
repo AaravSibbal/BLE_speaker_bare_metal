@@ -40,7 +40,6 @@ static I2C_handle_t* i2c1_handle = NULL;
     modify bit 7: M/S to 0
     write the val to address 0x06
 
-    turn on the i2s peripheral
     write to address: 0x02 val: 0x9E
 
     done
@@ -114,7 +113,6 @@ void dac_init(RCC_t* rcc){
     dac_write(0x00, 0x00);
     
     
-    i2s_init(I2S_INSTANCE_3, rcc, I2S_MODE_DMA_TX);
     // 
     /**
         power control 2:

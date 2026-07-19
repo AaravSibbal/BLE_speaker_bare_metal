@@ -47,12 +47,6 @@ block_t* block_queue_dequeue(block_queue_t* self); // will be null if can't do i
 __bool block_queue_is_empty(block_queue_t* self); //true if it is empty
 __bool block_queue_is_full(block_queue_t* self);//true if it is full
 
-// typedef enum engine_state{
-//     ENGINE_STATE_IDLE = 0, // the dac is off, dma tx is off
-//     ENGINE_STATE_WAKE_UP = 1, // we are recieving data now,but we need more proof
-//     ENGINE_STATE_RUNNING = 2 // we also got the proof we are runnning the engine full swing
-// }engine_state_t;
-
 typedef struct audio_engine{
     block_t* block_arr[8];
     block_queue_t* empty_block_queue;

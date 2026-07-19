@@ -25,14 +25,9 @@ static const GPIO_PUPDR_t I2S_gpio_pupd = NO_PUPD;
 static const GPIO_OSPEEDR_t I2S_gpio_speed = OSPEED_HIGH;
 
 static const DMA_buff_size_t DMA_BUFFER_SIZE = DMA_BUFF_SIZE_2048;
-// static volatile uint16_t DMA_mem0_buffer[(1UL<<DMA_BUFFER_SIZE)] = { 0 }; 
 
 static I2S_handle_t i2s2_handle = { 0 };
 static I2S_handle_t i2s3_handle = { 0 };
-
-// I2S_DMA_data_t i2s2_dma_data;
-// I2S_DMA_data_t i2s3_dma_data;
-
 
 __STATIC_INLINE void i2s_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin, GPIO_AFx_t af_val){
     GPIO_set_alt_func(gpio, pin, af_val);
@@ -262,35 +257,9 @@ void* user_data, uint32_t mem0_addr, uint32_t mem1_addr)
     return i2s_handle_ptr;
 }
 
-
 void i2s_init(I2S_handle_t* self){
     SPI_en_I2S(self->driver);
 }
-
-// I2S_DMA_data_t* i2s_init_dma_data(I2S_instance_t i2s_instance,  
-// DMA_buff_size_t buff_size, const uint16_t* source, uint16_t* dma_dest){
-//     I2S_DMA_data_t* dma_data_ptr = NULL;
-//     switch(i2s_instance){
-//         case I2S_INSTANCE_2:
-//             dma_data_ptr = &i2s2_dma_data;   
-//             break;
-//         case I2S_INSTANCE_3:
-//             dma_data_ptr = &i2s3_dma_data;
-//             break;
-//         default:
-//             // don't fuck around with my enums
-//             __BKPT(0);    
-//     }
-
-//     // dma_data_ptr->total_source_len = (1UL<<(uint32_t)buff_size);
-//     // dma_data_ptr->half_buff_size = (1UL<<((uint32_t)buff_size-1));
-//     // dma_data_ptr->current_read_offset = 0;
-//     // dma_data_ptr->app_source_data = source;
-//     // dma_data_ptr->dma_intermediate_buff = dma_dest;
-
-//     return dma_data_ptr;
-// }
-
 
 __INLINE static void I2S_error_handler(volatile I2S_handle_t* handle){
     static const uint8_t OVR_BIT = 6;
