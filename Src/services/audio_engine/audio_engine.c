@@ -10,6 +10,53 @@
 #include <stddef.h>
 #include <stdint.h>
 
+
+
+typedef enum block_state{
+    BLOCK_STATE_EMPTY = 0,
+    BLOCK_STATE_READING = 1,
+    BLOCK_STATE_PROCESSING = 2,
+    BLOCK_STATE_PROCESSED = 3,
+    BLOCK_STATE_WRITING = 4,
+    BLOCK_STATE_RAW = 5,
+    BLOCK_STATE_SILENCE = 6,
+    BLOCK_STATE_DUMP = 7
+}block_state_t;
+
+#define BLOCK_DATA_SIZE ((uint16_t)2048)
+struct block{
+    int16_t data[BLOCK_DATA_SIZE];
+    volatile block_state_t state;
+};
+
+typedef struct block_queue{
+    block_t** buffer;
+    volatile uint8_t head;
+    volatile uint8_t tail;
+    uint8_t capacity; //defaults to 8    
+}block_queue_t;
+
+typedef enum block_queue_type{
+    QUEUE_TYPE_RAW = 0,
+    QUEUE_TYPE_EMPTY = 1,
+    QUEUE_TYPE_PROCESSED = 2
+}block_queue_type_t;
+
+struct audio_engine{
+    block_t* block_arr[8];
+    block_queue_t* empty_block_queue;
+    block_queue_t* processed_block_queue;
+    block_queue_t* raw_block_queue;
+    block_t* curr_tx_block;
+    block_t* next_tx_block;
+    block_t* curr_rx_block;
+    block_t* next_rx_block;
+    block_t* curr_process_block;
+    volatile uint32_t consequetive_underrun;
+    volatile uint32_t consequetive_overrun;
+    engine_mode_t mode;
+};
+
 #define BLOCK_QUEUE_CAPACITY ((uint8_t)8)
 static const uint8_t BLOCK_QUEUE_MOD_VAL = BLOCK_QUEUE_CAPACITY - 1;
 
@@ -27,6 +74,85 @@ const int16_t sine_wave[SINE_WAVE_CAP] = {
 -2079, -3090, -4067, -5000, -5877, -6691, -7431, -8089, 
 -8660, -9135, -9510, -9781, -9945, -10000, -9945, -9781
 };
+
+static block_t* empty_queue_buffer[BLOCK_QUEUE_CAPACITY];
+static block_t* raw_queue_buffer[BLOCK_QUEUE_CAPACITY];
+static block_t* processed_queue_buffer[BLOCK_QUEUE_CAPACITY];
+
+static block_queue_t empty_queue_obj;
+static block_queue_t raw_queue_obj;
+static block_queue_t processed_queue_obj;
+
+__STATIC_INLINE __bool block_queue_is_full(block_queue_t* self){
+    if((self->head - self->tail) == self->capacity){
+        return TRUE;
+    }
+    return FALSE;
+}
+
+__STATIC_INLINE __bool block_queue_is_empty(block_queue_t* self){
+    if(self->head == self->tail){
+        return TRUE;
+    }
+    return FALSE;
+}
+
+__STATIC_INLINE __bool block_queue_enqueue(block_queue_t* self, block_t* data){
+    if(block_queue_is_full(self) == TRUE){
+        return FALSE;
+    }
+    self->buffer[(self->head & BLOCK_QUEUE_MOD_VAL)] = data; //set the data
+    __DMB();
+    self->head++;
+    return TRUE;
+}
+
+__STATIC_INLINE block_t* block_queue_dequeue(block_queue_t* self){
+    if(block_queue_is_empty(self) == TRUE){
+        return NULL;
+    }
+    block_t* data = self->buffer[(self->tail & BLOCK_QUEUE_MOD_VAL)];
+    __DMB();
+    self->tail++;
+    return data;
+}
+
+
+
+__STATIC_INLINE uint8_t block_queue_get_size(block_queue_t* self){
+    return (self->head - self->tail);
+}
+
+block_queue_t* block_queue_init(block_queue_type_t type){
+    block_queue_t* block_queue_ptr = NULL;
+    switch(type){
+        case QUEUE_TYPE_EMPTY:
+            block_queue_ptr = &empty_queue_obj;
+            block_queue_ptr->buffer = empty_queue_buffer;
+            block_queue_ptr->capacity = BLOCK_QUEUE_CAPACITY;
+            block_queue_ptr->head = 0;
+            block_queue_ptr->tail = 0;
+            break;
+        case QUEUE_TYPE_RAW:
+            block_queue_ptr = &raw_queue_obj;
+            block_queue_ptr->buffer = raw_queue_buffer;
+            block_queue_ptr->capacity = BLOCK_QUEUE_CAPACITY;
+            block_queue_ptr->head = 0;
+            block_queue_ptr->tail = 0;
+            break;
+        case QUEUE_TYPE_PROCESSED:
+            block_queue_ptr = &processed_queue_obj;
+            block_queue_ptr->buffer = processed_queue_buffer;
+            block_queue_ptr->capacity = BLOCK_QUEUE_CAPACITY;
+            block_queue_ptr->head = 0;
+            block_queue_ptr->tail = 0;
+            break;
+        default:
+            __BKPT(0);
+            // don't mess around with my enums
+    }
+    return block_queue_ptr;
+}
 
 static void audio_engine_prime(audio_engine_t* self){
     block_t* temp_block_ptr = NULL;
@@ -149,82 +275,7 @@ audio_engine_t* audio_engine_init(engine_mode_t mode, RCC_t* rcc){
 }
 
 
-static block_t* empty_queue_buffer[BLOCK_QUEUE_CAPACITY];
-static block_t* raw_queue_buffer[BLOCK_QUEUE_CAPACITY];
-static block_t* processed_queue_buffer[BLOCK_QUEUE_CAPACITY];
 
-static block_queue_t empty_queue_obj;
-static block_queue_t raw_queue_obj;
-static block_queue_t processed_queue_obj;
-
-block_queue_t* block_queue_init(block_queue_type_t type){
-    block_queue_t* block_queue_ptr = NULL;
-    switch(type){
-        case QUEUE_TYPE_EMPTY:
-            block_queue_ptr = &empty_queue_obj;
-            block_queue_ptr->buffer = empty_queue_buffer;
-            block_queue_ptr->capacity = BLOCK_QUEUE_CAPACITY;
-            block_queue_ptr->head = 0;
-            block_queue_ptr->tail = 0;
-            break;
-        case QUEUE_TYPE_RAW:
-            block_queue_ptr = &raw_queue_obj;
-            block_queue_ptr->buffer = raw_queue_buffer;
-            block_queue_ptr->capacity = BLOCK_QUEUE_CAPACITY;
-            block_queue_ptr->head = 0;
-            block_queue_ptr->tail = 0;
-            break;
-        case QUEUE_TYPE_PROCESSED:
-            block_queue_ptr = &processed_queue_obj;
-            block_queue_ptr->buffer = processed_queue_buffer;
-            block_queue_ptr->capacity = BLOCK_QUEUE_CAPACITY;
-            block_queue_ptr->head = 0;
-            block_queue_ptr->tail = 0;
-            break;
-        default:
-            __BKPT(0);
-            // don't mess around with my enums
-    }
-    return block_queue_ptr;
-}
-
-__INLINE __bool block_queue_enqueue(block_queue_t* self, block_t* data){
-    if(block_queue_is_full(self) == TRUE){
-        return FALSE;
-    }
-    self->buffer[(self->head & BLOCK_QUEUE_MOD_VAL)] = data; //set the data
-    __DMB();
-    self->head++;
-    return TRUE;
-}
-
-__INLINE block_t* block_queue_dequeue(block_queue_t* self){
-    if(block_queue_is_empty(self) == TRUE){
-        return NULL;
-    }
-    block_t* data = self->buffer[(self->tail & BLOCK_QUEUE_MOD_VAL)];
-    __DMB();
-    self->tail++;
-    return data;
-}
-
-__INLINE __bool block_queue_is_empty(block_queue_t* self){
-    if(self->head == self->tail){
-        return TRUE;
-    }
-    return FALSE;
-}
-
-__INLINE __bool block_queue_is_full(block_queue_t* self){
-    if((self->head - self->tail) == self->capacity){
-        return TRUE;
-    }
-    return FALSE;
-}
-
-uint8_t block_queue_get_size(block_queue_t* self){
-    return (self->head - self->tail);
-}
 
 
 // TODO: CHANGE THE CALLBACK'S PARAMS TO DMA HANDLE
