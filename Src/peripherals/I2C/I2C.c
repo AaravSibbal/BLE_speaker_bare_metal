@@ -141,7 +141,6 @@ GPIO_Pin_t scl_pin, uint32_t clock_speed_Mhz, RCC_t* rcc){
     
 	I2C_en_interrupts(i2c->driver);
 	I2C_en_errors(i2c->driver);
-	I2C_en_buffer(i2c->driver);
     I2C_en_ack(i2c->driver);
 
 	uint32_t clock_spd_hz = clock_speed_Mhz*MHZ_TO_HZ_MULTIPLIER;

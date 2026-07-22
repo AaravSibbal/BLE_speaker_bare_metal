@@ -1,24 +1,6 @@
 #ifndef I2C_DRIVER_H
 #define I2C_DRIVER_H
 
-/**
-    when using any of these functions make sure
-    to assert the validity of the driver.
-    
-    example: 
-    void some(){
-        BARE_ASSERT(driver);
-        I2C_some_shit(driver);
-    }
-    
-    the reason to not include assert in the driver code
-    is that because the driver code is used at so many points
-    it really bloats the code even in the isr.
-
-
-*/
-
-
 #include "../../def.h"
 
 typedef struct I2C_driver I2C_driver_t;
@@ -30,6 +12,7 @@ typedef enum I2C_mode{
 
 void I2C_en_reset(I2C_driver_t* driver);
 void I2C_en_interrupts(I2C_driver_t* driver);
+void I2C_dis_interrupts(I2C_driver_t* driver);
 void I2C_en_errors(I2C_driver_t* driver);
 void I2C_en_buffer(I2C_driver_t* driver);
 void I2C_dis_buffer(I2C_driver_t* driver);

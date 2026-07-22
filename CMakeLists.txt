@@ -161,7 +161,7 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     # -Wsuggest-override
     >
     $<$<COMPILE_LANGUAGE:ASM>:-x assembler-with-cpp -MMD -MP>
-    $<$<CONFIG:Debug>:-O2 -g3 -ggdb>
+    $<$<CONFIG:Debug>:-Os -g3 -ggdb>
     $<$<CONFIG:Release>:-O2>
 )
 

@@ -33,6 +33,11 @@ __INLINE void I2C_en_interrupts(I2C_driver_t* driver){
     bit_band_write(addr, ITEVTEN_BIT, 1);
 }
 
+void I2C_dis_interrupts(I2C_driver_t* driver){
+    volatile uint32_t addr = (uint32_t)&driver->CR2;
+    bit_band_write(addr, ITEVTEN_BIT, 0);
+}
+
 
 #define ITERREN_BIT 8UL
 

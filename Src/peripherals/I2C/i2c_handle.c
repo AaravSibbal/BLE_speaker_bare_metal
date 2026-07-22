@@ -1,6 +1,7 @@
 #include "i2c_handle.h"
 #include "../../arm/arm.h"
 #include "../../assert.h"
+#include "Src/arm/arm.h"
 #include "Src/peripherals/gpio/gpio.h"
 #include "Src/peripherals/i2c/i2c_driver.h"
 
@@ -51,10 +52,9 @@ void I2C_write(I2C_handle_t* self){
     BARE_ASSERT(self->i2c_device != NULL);
     BARE_ASSERT(self->i2c_device->driver != NULL);
 	BARE_ASSERT(queue_is_empty(self->tx_queue) == FALSE);
+	BARE_ASSERT(!(self->i2c_device->driver->CR1 & (1UL << 9)));
 
-	// i2c_bus
-
-	I2C_en_buffer(self->i2c_device->driver);
+	I2C_en_interrupts(self->i2c_device->driver);
 	self->direction = I2C_DIR_WRITE;
     self->state = I2C_STATE_SB_SENT;
     I2C_start_gen(self->i2c_device->driver);
@@ -65,10 +65,9 @@ void I2C_read(I2C_handle_t* self, uint16_t transfer_size){
     BARE_ASSERT(self->tx_queue != NULL);
     BARE_ASSERT(self->i2c_device != NULL);
     BARE_ASSERT(self->i2c_device->driver != NULL);
-	// BARE_ASSERT(queue_is_empty(self->tx_queue) == FALSE);
 
+	I2C_en_interrupts(self->i2c_device->driver);
 	I2C_en_ack(self->i2c_device->driver);
-	I2C_en_buffer(self->i2c_device->driver);
 	self->transfer_size = transfer_size;
 	self->direction = I2C_DIR_READ;
 	self->state = I2C_STATE_SB_SENT;
@@ -119,7 +118,7 @@ __STATIC_INLINE void I2C_ev_handler(I2C_handle_t* i2c_handle){
         }
     }
 
-    if(i2c_handle->direction == I2C_DIR_READ){
+    else if(i2c_handle->direction == I2C_DIR_READ){
         if(i2c_sr1 & ADDR_BIT_MSK){
             if(i2c_handle->transfer_size == 1){
                 // disable ack bit before clearing addr
@@ -148,7 +147,9 @@ __STATIC_INLINE void I2C_ev_handler(I2C_handle_t* i2c_handle){
 				(void)i2c_sr2;
 			}
             i2c_handle->state = I2C_STATE_BUSY;
-        }
+
+			I2C_en_buffer(i2c_handle->i2c_device->driver);
+		}
         else if(i2c_sr1 & BTF_BIT_MSK){
 			if(i2c_handle->transfer_size == 2){
 				I2C_stop_gen(i2c_handle->i2c_device->driver);
@@ -225,42 +226,37 @@ __STATIC_INLINE void I2C_ev_handler(I2C_handle_t* i2c_handle){
 		}
     }
     else if(i2c_handle->direction == I2C_DIR_WRITE){
-        // already clears the addr if it is active
-		dummy_read = I2C_get_SR1(i2c_handle->i2c_device->driver);
+		// 1. Always do the dummy reads to ensure ADDR is cleared if it just set
+        dummy_read = I2C_get_SR1(i2c_handle->i2c_device->driver);
         i2c_sr2 = I2C_get_SR2(i2c_handle->i2c_device->driver);
-		(void)dummy_read;
-		(void)i2c_sr2;
-        uint8_t payload;
-		if(i2c_sr1 & TxE_BIT_MSK){
-			/**
-				if is_valid = true
-					this means we have more data
-				if is_valus = false;
-					this mean we ran out of data
-			*/
-			__bool is_valid = queue_dequeue(
-				i2c_handle->tx_queue,
-				&payload
-			); 
-			if(!is_valid && (i2c_sr1 & BTF_BIT_MSK)){
-				I2C_stop_gen(i2c_handle->i2c_device->driver);
-				i2c_handle->state = I2C_STATE_DONE;
-				I2C_en_buffer(i2c_handle->i2c_device->driver);
-				if(i2c_handle->transfer_complete_cb != NULL){
-					i2c_handle->transfer_complete_cb();
-				}
-			}
-			else if(!is_valid && !(i2c_sr1 & BTF_BIT_MSK)){
-				I2C_dis_buffer(i2c_handle->i2c_device->driver);
-			}
-			else if(is_valid){
-				i2c_handle->state = I2C_STATE_BUSY;
-				I2C_write_to_DR(
-					i2c_handle->i2c_device->driver, 
-					payload
-				);
-			}
-		}
+        (void)dummy_read;
+        (void)i2c_sr2;
+
+        // 2. Enable buffer interrupt now that ADDR is clear, so TxE can pull from the queue
+        I2C_en_buffer(i2c_handle->i2c_device->driver);
+
+        // 3. Handle BTF FIRST (End of transfer condition)
+        if(i2c_sr1 & BTF_BIT_MSK){
+            I2C_stop_gen(i2c_handle->i2c_device->driver);
+            I2C_dis_buffer(i2c_handle->i2c_device->driver); // Keep it off!
+			I2C_dis_interrupts(i2c_handle->i2c_device->driver);
+            i2c_handle->state = I2C_STATE_DONE;
+            if(i2c_handle->transfer_complete_cb != NULL){
+                i2c_handle->transfer_complete_cb();
+            }
+        }
+        // 4. Handle TxE (Dumping data into DR)
+        else if(i2c_sr1 & TxE_BIT_MSK){
+            uint8_t payload;
+            if(queue_dequeue(i2c_handle->tx_queue, &payload)){
+                i2c_handle->state = I2C_STATE_BUSY;
+                I2C_write_to_DR(i2c_handle->i2c_device->driver, payload);
+            } else {
+                // Queue is empty. Disable buffer interrupt so we don't get trapped in an endless TxE loop.
+                // The hardware will now shift out the very last byte on the bus and trigger BTF when done.
+                I2C_dis_buffer(i2c_handle->i2c_device->driver);
+            }
+        }
     }
 	__DSB();
 }
@@ -279,7 +275,7 @@ void I2C3_EV_IRQHandler(void){
 
 void I2C1_ER_IRQHandler(void){
     uint32_t sr1 = I2C_get_SR1(i2c1_handle.i2c_device->driver);
-    
+    __BKPT(0);
     // Check if the error was an Acknowledge Failure (NACK)
     if(sr1 & (1UL << 10)){
         // Clear the AF bit by writing 0 to it
@@ -289,6 +285,7 @@ void I2C1_ER_IRQHandler(void){
         I2C_stop_gen(i2c1_handle.i2c_device->driver);
 		i2c1_handle.error_code = I2C_ERR_AF;
         i2c1_handle.state = I2C_STATE_DONE; 
+		__BKPT(0);
     }
 	// bus error
 	if(sr1 & (1UL<<8)){

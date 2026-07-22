@@ -58,26 +58,50 @@ int main(void){
 
     GPIO_set_moder(green_led_gpio, GPIO_PIN_4, GPIO_MODE_OUTPUT);
     GPIO_set_otyper(green_led_gpio, GPIO_PIN_4, GPIO_TYPE_PUSH_PULL);
-    audio_engine_t* audio_engine_obj = audio_engine_init(ENGINE_MODE_TESTING, rcc);
-
     Systick_t* systick = Systick_init(16000000, AHB);
     Systick_start_clock(systick);
+
+    // --- CPU CALIBRATION PHASE ---
+    uint32_t max_idle_count = 0;
+    uint32_t calib_start = Systick_get_ticks();
+    while((Systick_get_ticks() - calib_start) < 1000) {
+        max_idle_count++;
+    }
+
+    audio_engine_t* audio_engine_obj = audio_engine_init(ENGINE_MODE_TESTING, rcc);
+
+
     uint32_t ms = 0;
     uint32_t last_ticks = Systick_get_ticks();
+    uint32_t cpu_last_ticks = Systick_get_ticks();
     uint32_t curr_ticks = 0;
+    uint32_t curr_idle_count = 0;
+    printf_("something\n");
     while(1){
+        curr_ticks = Systick_get_ticks();
         if(button_history == 0x00){
             ms = 1000;
         }else if(button_history == 0xFF){
             ms = 100;
-        }
-        curr_ticks = Systick_get_ticks();
+        }        
         if((curr_ticks - last_ticks) >= ms){
             LED_toggle(green_led);
             last_ticks = curr_ticks;
         }
         audio_engine_processing(audio_engine_obj);
+
+        curr_idle_count++;
+        if((curr_ticks - cpu_last_ticks) >= 1000){
+            // Calculate percentage using integer math to avoid pulling in FPU/floats
+            uint32_t load = 100 - ((curr_idle_count * 100) / max_idle_count);
+            
+            // Cast to uint32_t/unsigned long if printf_ expects it for %u or %lu
+            printf_("CPU Load: %u%%\n", load);
+            
+            curr_idle_count = 0;
+            cpu_last_ticks = curr_ticks;
+        }
         // delay_ms(timer, 1000);
-        __WFI();
+        // __WFI();
     }
 }
