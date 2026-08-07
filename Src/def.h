@@ -17,6 +17,7 @@
 #define PERIPHERAL_BIT_BAND_START 0x40000000UL 
 #define PERIPHERAL_BIT_BAND_END 0x400FFFFFUL 
 #define PERIPHERAL_BIT_BAND_BASE 0x42000000UL
+#define CCM __attribute__((section(".ccmram_bss")))
 // extern int printf_(const char* format, ...);
 
 

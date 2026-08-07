@@ -5,6 +5,8 @@
 #include "../../../arm/arm.h"
 #include "../../../devices/button/button.h"
 #include "../../gpio/gpio.h"
+#include "Src/services/print/printf.h"
+#include "../../../services/audio_engine/audio_engine.h"
 
 typedef struct Systick_driver{
     __IO uint32_t ctrl;
@@ -14,7 +16,7 @@ typedef struct Systick_driver{
 } Systick_driver_t;
 
 static volatile uint32_t ticks;
-static Systick_t systick_obj;
+CCM static Systick_t systick_obj;
 
 
 struct Systick{
@@ -108,6 +110,21 @@ void SysTick_Handler(void){
     uint32_t gpio_idr_val = GPIO_get_IDR_G(BUTTON_GPIO_PORT, BUTTON_GPIO_PIN);
     button_history = (button_history << 1) | gpio_idr_val;
     __set_PRIMASK(primask);
+    static uint32_t rx_last_ms = 0;
+    static uint32_t rx_last_count = 0;
+    uint32_t now_ms = Systick_get_ticks();/* your ms accessor */
+    if (now_ms - rx_last_ms >= 1000) {
+        uint32_t c = g_rx_tc_count;              /* snapshot the volatile once */
+        uint32_t delta = c - rx_last_count;
+        /* each TC = DMA_BUFFER_SIZE uint16 = 2048 samples = 1024 stereo frames */
+        uint32_t frames = delta * 1024;
+        printf_("RX: %lu TC/s, %lu frames/s, %lu B/s\n",
+            (unsigned long)delta,
+            (unsigned long)frames,
+            (unsigned long)(frames * 4));    /* 4 bytes per stereo frame */
+        rx_last_ms = now_ms;
+        rx_last_count = c;
+    }
 }
 
 Systick_t* Systick_init(uint32_t clck_speed_hz, Clck_src_t clck_src){

@@ -435,7 +435,7 @@ DMA_handle_t* DMA_handle_init(DMA_hndl_config_t* config){
     return handle_ptr;
 }
 
-__STATIC_INLINE void dma_isr_handler(DMA_handle_t* handle){
+static void dma_isr_handler(DMA_handle_t* handle){
     if(DMA_get_te(handle->driver, handle->stream) == 1){
         DMA_clear_te(handle->driver, handle->stream);
         handle->error_state = DMA_ERROR_TRANSFER;

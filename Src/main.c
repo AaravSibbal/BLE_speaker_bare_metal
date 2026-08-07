@@ -20,6 +20,7 @@
 #include "peripherals/i2c/i2c.h"
 #include "devices/dac/dac.h"
 #include "services/audio_engine/audio_engine.h"
+// #include <cstdio>
 #include <stdint.h>
 
 
@@ -27,14 +28,15 @@ int main(void){
     // setting up priority
     set_priority_grouping(PRIGROUP_4PRE_0SUB);
     set_priority(DMA1_Stream5_IRQn, 1);
-    // set_priority(DMA1_Stream5_IRQn, 1);
+    set_priority(DMA1_Stream3_IRQn, 1);
     set_priority(I2C1_EV_IRQn, 2);
     set_priority(I2C1_ER_IRQn, 3);
     set_priority(SysTick_IRQn,4);
     set_priority(BusFault_IRQn, 0);
     set_priority(MemoryManagement_IRQn, 0);
     set_priority(UsageFault_IRQn, 0);
-
+    // int some = 0;
+    // printf_("%d", some);
 
     enable_IRQ(SysTick_IRQn);
     enable_IRQ(I2C1_ER_IRQn);
@@ -43,6 +45,7 @@ int main(void){
     enable_IRQ(MemoryManagement_IRQn);
     enable_IRQ(UsageFault_IRQn);
     enable_IRQ(DMA1_Stream5_IRQn);
+    enable_IRQ(DMA1_Stream3_IRQn);
 
     __DSB();
     __ISB();
@@ -68,7 +71,7 @@ int main(void){
         max_idle_count++;
     }
 
-    audio_engine_t* audio_engine_obj = audio_engine_init(ENGINE_MODE_TESTING, rcc);
+    audio_engine_t* audio_engine_obj = audio_engine_init(ENGINE_MODE_NORMAL, rcc);
 
 
     uint32_t ms = 0;
@@ -76,7 +79,6 @@ int main(void){
     uint32_t cpu_last_ticks = Systick_get_ticks();
     uint32_t curr_ticks = 0;
     uint32_t curr_idle_count = 0;
-    printf_("something\n");
     while(1){
         curr_ticks = Systick_get_ticks();
         if(button_history == 0x00){
@@ -89,6 +91,11 @@ int main(void){
             last_ticks = curr_ticks;
         }
         audio_engine_processing(audio_engine_obj);
+        // printf("block: [");
+        // for(int i=0; i<2048;i++){
+        //     printf("%d, ", audio_engine_obj->curr_process_block[i]);
+        // }
+        // printf("]\n");
 
         curr_idle_count++;
         if((curr_ticks - cpu_last_ticks) >= 1000){

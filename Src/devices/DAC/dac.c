@@ -2,23 +2,29 @@
 #include "../../peripherals/i2c/i2c_handle.h"
 #include "../../data_structure/queue/queue.h"
 #include "../../peripherals/spi/i2s.h"
+#include "Src/arm/arm.h"
 #include "Src/def.h"
 #include "Src/peripherals/gpio/gpio.h"
+#include "Src/peripherals/i2c/i2c_driver.h"
+#include "Src/peripherals/timers/systick/systick.h"
 #include <stdint.h>
 #include <stddef.h>
+#include "../../assert.h"
+#include "../../services/interrupts/interrupt.h"
+#include "Src/services/interrupts/interrupt.h"
 
 
-static const uint8_t DAC_I2C_addr = 0x94;
+CCM static const uint8_t DAC_I2C_addr = 0x94;
 
-static queue_t i2c1_rx_queue;
-static queue_t i2c1_tx_queue;
-static uint8_t i2c_rx_buffer[1];
-static uint8_t i2c_tx_buffer[2];
-static queue_t* i2c1_rx_queue_ptr = NULL;
-static queue_t* i2c1_tx_queue_ptr = NULL;
+CCM static queue_t i2c1_rx_queue;
+CCM static queue_t i2c1_tx_queue;
+CCM static uint8_t i2c_rx_buffer[1];
+CCM static uint8_t i2c_tx_buffer[2];
+CCM static queue_t* i2c1_rx_queue_ptr = NULL;
+CCM static queue_t* i2c1_tx_queue_ptr = NULL;
 
-static I2C_t* i2c1_device = NULL;
-static I2C_handle_t* i2c1_handle = NULL;
+CCM static I2C_t* i2c1_device = NULL;
+CCM static I2C_handle_t* i2c1_handle = NULL;
  /**
 
     initialization sequence:
@@ -53,6 +59,7 @@ __STATIC_INLINE void dac_write(uint8_t reg_addr, uint8_t val){
     while(i2c1_handle->state != I2C_STATE_DONE){}
     while(I2C_get_SR2(i2c1_device->driver) & 0x02){}
 }
+
 
 void dac_init(RCC_t* rcc){
     i2c1_rx_queue_ptr = queue_init(
@@ -89,9 +96,6 @@ void dac_init(RCC_t* rcc){
         NULL
     );
     GPIO_set_odr(GPIO_init(GPIO_PORT_D, rcc), GPIO_PIN_4, GPIO_OUTPUT_HIGH);
-    for(volatile int i = 0; i < 50000; i++);
-
-    
     dac_write(0x02, 0x01);
     dac_write(0x00, 0x99);
     dac_write(0x47, 0x80);
@@ -109,7 +113,6 @@ void dac_init(RCC_t* rcc){
     dac_write(0x32, val);
     val &= ~(1<<7);
     dac_write(0x32, val);
-
     dac_write(0x00, 0x00);
     
     

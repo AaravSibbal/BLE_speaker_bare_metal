@@ -9,7 +9,7 @@ struct LED{
     __bool is_on;
 };
 
-static LED_t led_pool[4];
+CCM static LED_t led_pool[4];
 
 LED_t* LED_init(LED_color_t color, GPIO_t* gpio){
     uint8_t led_idx = color-12;

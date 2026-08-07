@@ -5,14 +5,59 @@
 #include "Src/peripherals/rcc/rcc.h"
 #include "stdint.h"
 
+typedef struct audio_engine audio_engine_t;
+typedef struct block block_t;
+typedef enum block_state{
+    BLOCK_STATE_EMPTY = 0,
+    BLOCK_STATE_READING = 1,
+    BLOCK_STATE_PROCESSING = 2,
+    BLOCK_STATE_PROCESSED = 3,
+    BLOCK_STATE_WRITING = 4,
+    BLOCK_STATE_RAW = 5,
+    BLOCK_STATE_SILENCE = 6,
+    BLOCK_STATE_DUMP = 7
+}block_state_t;
+
+#define BLOCK_DATA_SIZE ((uint16_t)2048)
+struct block{
+    int16_t data[BLOCK_DATA_SIZE];
+    volatile block_state_t state;
+};
+
+typedef struct block_queue{
+    block_t** buffer;
+    volatile uint8_t head;
+    volatile uint8_t tail;
+    uint8_t capacity; //defaults to 8    
+}block_queue_t;
+
+typedef enum block_queue_type{
+    QUEUE_TYPE_RAW = 0,
+    QUEUE_TYPE_EMPTY = 1,
+    QUEUE_TYPE_PROCESSED = 2
+}block_queue_type_t;
+
 typedef enum engine_mode{
     ENGINE_MODE_NORMAL = 0,
     ENGINE_MODE_TESTING = 1
 }engine_mode_t;
+struct audio_engine{
+    block_t* block_arr[8];
+    block_queue_t* empty_block_queue;
+    block_queue_t* processed_block_queue;
+    block_queue_t* raw_block_queue;
+    block_t* curr_tx_block;
+    block_t* next_tx_block;
+    block_t* curr_rx_block;
+    block_t* next_rx_block;
+    block_t* curr_process_block;
+    volatile uint32_t consequetive_underrun;
+    volatile uint32_t consequetive_overrun;
+    engine_mode_t mode;
+};
 
-typedef struct audio_engine audio_engine_t;
-typedef struct block block_t;
 
+extern volatile uint32_t g_rx_tc_count;
 audio_engine_t* audio_engine_init(engine_mode_t mode, RCC_t* rcc);
 
 void audio_engine_tx_dma_TC_callback(DMA_handle_t* dma_handle);

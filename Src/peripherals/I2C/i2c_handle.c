@@ -5,9 +5,9 @@
 #include "Src/peripherals/gpio/gpio.h"
 #include "Src/peripherals/i2c/i2c_driver.h"
 
-static I2C_handle_t i2c1_handle;
-static I2C_handle_t i2c2_handle;
-static I2C_handle_t i2c3_handle;
+CCM static I2C_handle_t i2c1_handle;
+CCM static I2C_handle_t i2c2_handle;
+CCM static I2C_handle_t i2c3_handle;
 
 I2C_handle_t* I2C_handle_init(
 I2C_t* i2c_device, I2C_instance_t i2c_instance, queue_t* rx_queue,
@@ -52,7 +52,7 @@ void I2C_write(I2C_handle_t* self){
     BARE_ASSERT(self->i2c_device != NULL);
     BARE_ASSERT(self->i2c_device->driver != NULL);
 	BARE_ASSERT(queue_is_empty(self->tx_queue) == FALSE);
-	BARE_ASSERT(!(self->i2c_device->driver->CR1 & (1UL << 9)));
+	// BARE_ASSERT(!(self->i2c_device->driver->CR1 & (1UL << 9)));
 
 	I2C_en_interrupts(self->i2c_device->driver);
 	self->direction = I2C_DIR_WRITE;
@@ -91,7 +91,7 @@ void I2C_read(I2C_handle_t* self, uint16_t transfer_size){
 #define RxNE_BIT_MSK (1UL<<RxNE_BIT)
 
 
-__STATIC_INLINE void I2C_ev_handler(I2C_handle_t* i2c_handle){
+void I2C_ev_handler(I2C_handle_t* i2c_handle){
 
 	uint32_t dummy_read;
     uint32_t i2c_sr1 = I2C_get_SR1(i2c_handle->i2c_device->driver);

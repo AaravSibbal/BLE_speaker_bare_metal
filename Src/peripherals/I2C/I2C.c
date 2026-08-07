@@ -16,14 +16,14 @@ const GPIO_port_t i2c1_scl_gpio_port = GPIO_PORT_B;
 const GPIO_Pin_t i2c1_scl_gpio_pin = GPIO_PIN_6;
 const GPIO_Pin_t i2c1_sda_gpio_pin = GPIO_PIN_9;
 
-I2C_t i2c1;
-I2C_t i2c2;
-I2C_t i2c3;
+CCM I2C_t i2c1;
+CCM I2C_t i2c2;
+CCM I2C_t i2c3;
 
-static const GPIO_AFx_t I2C_GPIO_ALT_FUNC_MAPPING = AF4;
-static const GPIO_MODER_t I2C_GPIO_MODE = GPIO_MODE_ALT;
-static const GPIO_OTYPER_t I2C_GPIO_TYPE = GPIO_TYPE_OPEN_DRAIN;
-static const GPIO_PUPDR_t I2C_GPIO_PUPDR_VAL = PULL_UP;
+CCM static const GPIO_AFx_t I2C_GPIO_ALT_FUNC_MAPPING = AF4;
+CCM static const GPIO_MODER_t I2C_GPIO_MODE = GPIO_MODE_ALT;
+CCM static const GPIO_OTYPER_t I2C_GPIO_TYPE = GPIO_TYPE_OPEN_DRAIN;
+CCM static const GPIO_PUPDR_t I2C_GPIO_PUPDR_VAL = PULL_UP;
 
 
 

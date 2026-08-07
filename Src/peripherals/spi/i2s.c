@@ -5,6 +5,7 @@
 #include "../rcc/rcc.h"
 #include "Src/arm/arm.h"
 #include "Src/peripherals/dma/dma.h"
+#include "Src/peripherals/spi/spi_driver.h"
 #include "spi_driver.h"
 #include "stdint.h"
 #include <stddef.h>
@@ -17,8 +18,30 @@ static const GPIO_Pin_t I2S3_SCK_GPIO_PIN = GPIO_PIN_10;
 static const GPIO_Pin_t I2S3_SD_GPIO_PIN = GPIO_PIN_12;
 static const GPIO_port_t I2S3_WS_GPIO_PORT = GPIO_PORT_A;
 static const GPIO_Pin_t I2S3_WS_GPIO_PIN = GPIO_PIN_4;
+// i2s2 sd pin: PC3
+// i2s2 SCK pin: PB10 (just to make sure we are on the same page this is how it is written, SPI2_SCK / I2S2_CK) now I don't know if it is the mck or sck or what?
+// i2s2 WS: PB12
+// i2s2 SCK: PB13
+// i2s2 SD: PB15
+// i2s2_MCK: PC6
+// i2s2 WS: PI10
+// i2s2 SCK: PI1
+// i2s2 SD: PI3
+// i2s2 WS: PB9
+// static const GPIO_port_t I2S2_SD_GPIO_PORT = GPIO_PORT_B;
+static const GPIO_Pin_t I2S2_SD_GPIO_PIN = GPIO_PIN_15;
+
+static const GPIO_port_t I2S2_SCK_GPIO_PORT = GPIO_PORT_B;
+static const GPIO_Pin_t I2S2_SCK_GPIO_PIN = GPIO_PIN_13;
+
+// static const GPIO_port_t I2S2_WS_GPIO_PORT = GPIO_PORT_B;
+static const GPIO_Pin_t I2S2_WS_GPIO_PIN = GPIO_PIN_12;
+
+static const GPIO_port_t I2S2_MCK_GPIO_PORT = GPIO_PORT_C;
+static const GPIO_Pin_t I2S2_MCK_GPIO_PIN = GPIO_PIN_6;
 
 static const GPIO_MODER_t I2S_gpio_mode = GPIO_MODE_ALT;
+static const GPIO_AFx_t I2S2_gpio_af = AF5;
 static const GPIO_AFx_t I2S3_gpio_af = AF6;
 static const GPIO_OTYPER_t I2S_gpio_otype = GPIO_TYPE_PUSH_PULL;
 static const GPIO_PUPDR_t I2S_gpio_pupd = NO_PUPD;
@@ -26,8 +49,8 @@ static const GPIO_OSPEEDR_t I2S_gpio_speed = OSPEED_HIGH;
 
 static const DMA_buff_size_t DMA_BUFFER_SIZE = DMA_BUFF_SIZE_2048;
 
-static I2S_handle_t i2s2_handle = { 0 };
-static I2S_handle_t i2s3_handle = { 0 };
+CCM static I2S_handle_t i2s2_handle = { 0 };
+CCM static I2S_handle_t i2s3_handle = { 0 };
 
 __STATIC_INLINE void i2s_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin, GPIO_AFx_t af_val){
     GPIO_set_alt_func(gpio, pin, af_val);
@@ -40,8 +63,15 @@ __STATIC_INLINE void i2s_conf_gpio(GPIO_t* gpio, GPIO_Pin_t pin, GPIO_AFx_t af_v
 __STATIC_INLINE void i2s_init_gpio(I2S_instance_t instance, RCC_t* rcc){
     switch (instance) {
         case I2S_INSTANCE_2:
-            // not implemented yet
-            __BKPT(0);
+            {
+                GPIO_t* gpio_c = GPIO_init(I2S2_MCK_GPIO_PORT, rcc);
+                GPIO_t* gpio_b = GPIO_init(I2S2_SCK_GPIO_PORT, rcc);
+                i2s_conf_gpio(gpio_c, I2S2_MCK_GPIO_PIN, I2S2_gpio_af);
+                i2s_conf_gpio(gpio_b, I2S2_SCK_GPIO_PIN, I2S2_gpio_af);
+                i2s_conf_gpio(gpio_b, I2S2_SD_GPIO_PIN, I2S2_gpio_af);
+                i2s_conf_gpio(gpio_b, I2S2_WS_GPIO_PIN, I2S2_gpio_af);
+            }
+            // __BKPT(0);
             break;
         case I2S_INSTANCE_3:{
             GPIO_t* gpio_c = GPIO_init(I2S3_MCK_GPIO_PORT, rcc);
@@ -131,7 +161,11 @@ void* user_data, uint32_t mem0_addr, uint32_t mem1_addr)
     SPI_en_MCK(spi_driver);
     SPI_set_proto(spi_driver, SPI_I2S_MODE);
     SPI_set_I2S_std(spi_driver, I2S_PHILLIPS);
-    SPI_set_I2S_conf(spi_driver, I2S_MASTER_TRANSMIT);
+    if(mode == I2S_MODE_DMA_TX){
+        SPI_set_I2S_conf(spi_driver, I2S_MASTER_TRANSMIT);
+    }else if(mode == I2S_MODE_DMA_RX){
+        SPI_set_I2S_conf(spi_driver, I2S_MASTER_RECEIVE);
+    }
     SPI_set_I2S_ckpol(spi_driver, I2S_CKPOL_LOW);
     SPI_set_I2S_data_len(spi_driver, I2S_DATA_LEN_16);
     SPI_set_I2S_chan_len(spi_driver, I2S_CHAN_LEN_16);
@@ -187,7 +221,7 @@ void* user_data, uint32_t mem0_addr, uint32_t mem1_addr)
         DMA_init(dma_handle->driver, dma_handle->stream);
     }
     else if(mode == I2S_MODE_DMA_RX){
-        __BKPT(0); // there is still something here that I haven't done
+        // __BKPT(0); // there is still something here that I haven't done
         SPI_set_DMARX(spi_driver, SPI_EN);
         // not implemented the config yet
         DMA_config_t dma_config = {

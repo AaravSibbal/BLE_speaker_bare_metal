@@ -14,7 +14,7 @@
 #define ITM_GPIO_PIN GPIO_PIN_3
 
 
-ITM_t itm;
+CCM ITM_t itm;
 
 typedef struct ITM_driver{
     __IO uint32_t ITM_stim_port[32];

@@ -128,12 +128,14 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     ${symbols_SYMB}
     $<$<COMPILE_LANGUAGE:C>: ${symbols_c_SYMB}>
-    $<$<COMPILE_LANGUAGE:CXX>: ${symbols_cxx_SYMB}>
+    # $<$<COMPILE_LANGUAGE:CXX>: ${symbols_cxx_SYMB}>
     $<$<COMPILE_LANGUAGE:ASM>: ${symbols_asm_SYMB}>
-
+    PRINTF_DISABLE_SUPPORT_FLOAT
+    PRINTF_DISABLE_SUPPORT_EXPONENTIAL
+    PRINTF_DISABLE_SUPPORT_LONG_LONG
     # Configuration specific
     $<$<CONFIG:Debug>:DEBUG>
-    $<$<CONFIG:Release>: >
+    $<$<CONFIG:Release>:NDEBUG>
 )
 
 # Add linked libraries
@@ -144,7 +146,9 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     ${cpu_PARAMS}
     ${compiler_OPTS}
     -fstack-usage
-    # -fcyclomatic-complexity
+    -ffunction-sections
+    -fdata-sections
+    -fcyclomatic-complexity
     -Wall
     -Wextra
     -Wpedantic
@@ -161,8 +165,8 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     # -Wsuggest-override
     >
     $<$<COMPILE_LANGUAGE:ASM>:-x assembler-with-cpp -MMD -MP>
-    $<$<CONFIG:Debug>:-Os -g3 -ggdb>
-    $<$<CONFIG:Release>:-O2>
+    $<$<CONFIG:Debug>:-Og -g3 -ggdb>
+    $<$<CONFIG:Release>:-O3 -g3 -ggdb>
 )
 
 # Linker options
@@ -170,17 +174,18 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -T${linker_script_SRC}
     ${cpu_PARAMS}
     ${linker_OPTS}
+    -Wl,--gc-sections
     -Wl,-Map=${CMAKE_PROJECT_NAME}.map
     # -u _printf_float # STDIO float formatting support (remove if not used)
+    --specs=nano.specs
     --specs=nosys.specs
     -Wl,--start-group
     -lc
     -lm
-    -lstdc++
-    -lsupc++
     -Wl,--end-group
     -Wl,-z,max-page-size=8 # Allow good software remapping across address space (with proper GCC section making)
     -Wl,--print-memory-usage
+    -Wl,-Map=${CMAKE_PROJECT_NAME}.map,--cref
 )
 
 # Conditionally add CMSE linker options

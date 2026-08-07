@@ -12,59 +12,18 @@
 
 
 
-typedef enum block_state{
-    BLOCK_STATE_EMPTY = 0,
-    BLOCK_STATE_READING = 1,
-    BLOCK_STATE_PROCESSING = 2,
-    BLOCK_STATE_PROCESSED = 3,
-    BLOCK_STATE_WRITING = 4,
-    BLOCK_STATE_RAW = 5,
-    BLOCK_STATE_SILENCE = 6,
-    BLOCK_STATE_DUMP = 7
-}block_state_t;
-
-#define BLOCK_DATA_SIZE ((uint16_t)2048)
-struct block{
-    int16_t data[BLOCK_DATA_SIZE];
-    volatile block_state_t state;
-};
-
-typedef struct block_queue{
-    block_t** buffer;
-    volatile uint8_t head;
-    volatile uint8_t tail;
-    uint8_t capacity; //defaults to 8    
-}block_queue_t;
-
-typedef enum block_queue_type{
-    QUEUE_TYPE_RAW = 0,
-    QUEUE_TYPE_EMPTY = 1,
-    QUEUE_TYPE_PROCESSED = 2
-}block_queue_type_t;
-
-struct audio_engine{
-    block_t* block_arr[8];
-    block_queue_t* empty_block_queue;
-    block_queue_t* processed_block_queue;
-    block_queue_t* raw_block_queue;
-    block_t* curr_tx_block;
-    block_t* next_tx_block;
-    block_t* curr_rx_block;
-    block_t* next_rx_block;
-    block_t* curr_process_block;
-    volatile uint32_t consequetive_underrun;
-    volatile uint32_t consequetive_overrun;
-    engine_mode_t mode;
-};
 
 #define BLOCK_QUEUE_CAPACITY ((uint8_t)8)
-static const uint8_t BLOCK_QUEUE_MOD_VAL = BLOCK_QUEUE_CAPACITY - 1;
+CCM static const uint8_t BLOCK_QUEUE_MOD_VAL = BLOCK_QUEUE_CAPACITY - 1;
 
-static audio_engine_t audio_engine_obj;
+CCM static audio_engine_t audio_engine_obj;
 static block_t SILENCE_BLOCK;
 static block_t DUMP_BLOCK;
-static block_t block_arr[8];
+static block_t block_arr[BLOCK_QUEUE_CAPACITY];
 #define SINE_WAVE_CAP (48)
+
+volatile uint32_t g_rx_tc_count = 0;
+
 
 const int16_t sine_wave[SINE_WAVE_CAP] = {
 0, 1045, 2079, 3090, 4067, 5000, 5877, 6691, 
@@ -75,13 +34,13 @@ const int16_t sine_wave[SINE_WAVE_CAP] = {
 -8660, -9135, -9510, -9781, -9945, -10000, -9945, -9781
 };
 
-static block_t* empty_queue_buffer[BLOCK_QUEUE_CAPACITY];
-static block_t* raw_queue_buffer[BLOCK_QUEUE_CAPACITY];
-static block_t* processed_queue_buffer[BLOCK_QUEUE_CAPACITY];
+CCM static block_t* empty_queue_buffer[BLOCK_QUEUE_CAPACITY];
+CCM static block_t* raw_queue_buffer[BLOCK_QUEUE_CAPACITY];
+CCM static block_t* processed_queue_buffer[BLOCK_QUEUE_CAPACITY];
 
-static block_queue_t empty_queue_obj;
-static block_queue_t raw_queue_obj;
-static block_queue_t processed_queue_obj;
+CCM static block_queue_t empty_queue_obj;
+CCM static block_queue_t raw_queue_obj;
+CCM static block_queue_t processed_queue_obj;
 
 __STATIC_INLINE __bool block_queue_is_full(block_queue_t* self){
     if((self->head - self->tail) == self->capacity){
@@ -355,6 +314,7 @@ __INLINE void audio_engine_rx_dma_TC_callback(DMA_handle_t* dma_handle){
 
     DMA_set_next_buffer(dma_handle->driver, dma_handle->stream, (uint32_t)temp_block_ptr->data);
     self->next_rx_block = temp_block_ptr;
+    g_rx_tc_count++;
     __DMB();
 }
 

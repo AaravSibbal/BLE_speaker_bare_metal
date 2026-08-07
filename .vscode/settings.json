@@ -15,5 +15,6 @@
     "cortex-debug.variableUseNaturalFormat": false,
     "stm32cube-ide-clangd.enableFormatting": true,
     "vim.leader": "\\",
-    "workbench.colorTheme": "One Dark Pro Monokai Darker"
+    "workbench.colorTheme": "One Dark Pro Monokai Darker",
+    "files.autoSave": "onFocusChange"
 }
